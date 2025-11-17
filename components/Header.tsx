@@ -1,6 +1,7 @@
 import React from 'react';
 import type { LinkState } from '../types';
-import { Logo } from './Logo';
+// FIX: Update import path for Logo component
+import { Logo } from './core/Logo';
 
 interface HeaderProps {
     linkState: LinkState;
