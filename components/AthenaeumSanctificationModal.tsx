@@ -1,6 +1,7 @@
+
 import React from 'react';
-import { CloseIcon, ShieldCheckIcon } from '../core/Icons';
-import { CodeBlock } from '../core/CodeBlock';
+import { CloseIcon, ShieldCheckIcon } from './core/Icons';
+import { CodeBlock } from './core/CodeBlock';
 
 interface AthenaeumSanctificationModalProps {
   onClose: () => void;

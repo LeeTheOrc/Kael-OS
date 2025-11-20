@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { CloseIcon, KeyIcon } from '../core/Icons';
+import { CloseIcon, UsbDriveIcon } from '../core/Icons';
 import { CodeBlock } from '../core/CodeBlock';
 
 interface KeyBackupModalProps {
@@ -10,142 +11,80 @@ const BACKUP_SCRIPT_RAW = `#!/bin/bash
 set -euo pipefail
 
 echo "--- GPG Key Backup Ritual ---"
-echo -e "\\n\\033[1;31mWARNING: Your private key is extremely sensitive. Keep this backup in a secure location.\\033[0m\\n"
+read -p "Enter the email or Key ID of the GPG key to back up: " GPG_IDENTIFIER
+read -p "Enter path for the backup file (e.g., /media/usb/mykey.asc): " BACKUP_PATH
 
-# --- [1/4] Detect GPG Key ---
-echo "--> [1/4] Detecting default GPG signing key..."
-GPG_KEY_ID=""
-if [ -f /etc/makepkg.conf ] && grep -q -E '^GPGKEY=' /etc/makepkg.conf; then
-    GPG_KEY_ID=\$(grep -E '^GPGKEY=' /etc/makepkg.conf | head -1 | cut -d'=' -f2 | tr -d '[:space:]"')
-fi
-if [[ -z "\$GPG_KEY_ID" ]] && command -v git &>/dev/null && git config --global user.signingkey &>/dev/null; then
-    GPG_KEY_ID=\$(git config --global user.signingkey)
-fi
-if [[ -z "\$GPG_KEY_ID" ]]; then
-    GPG_KEY_ID=\$(gpg --list-secret-keys --with-colons | awk -F: '/^sec/{print \$5; exit}')
-fi
-
-if [[ -z "\$GPG_KEY_ID" ]]; then
-    echo "❌ ERROR: Could not automatically detect a GPG signing key." >&2
-    exit 1
-fi
-echo "✅ Key to be backed up: \$GPG_KEY_ID"
-echo ""
-
-# --- [2/4] Identify USB Drive ---
-echo "--> [2/4] Identifying backup device..."
-echo "Available storage devices:"
-lsblk -dno NAME,SIZE,MODEL | sed 's/^/  /'
-echo ""
-read -p "Please enter the device name for your USB drive (e.g., sdb): " DEVICE_NAME < /dev/tty
-
-if [[ -z "\$DEVICE_NAME" ]]; then
-    echo "No device entered. Aborting."
+if [ -z "\$GPG_IDENTIFIER" ] || [ -z "\$BACKUP_PATH" ]; then
+    echo "❌ ERROR: Key identifier and backup path cannot be empty." >&2
     exit 1
 fi
 
-DEVICE_PATH="/dev/\$DEVICE_NAME"
-if [ ! -b "\$DEVICE_PATH" ]; then
-    echo "❌ ERROR: Device '\$DEVICE_PATH' is not a valid block device." >&2
-    exit 1
-fi
-PARTITION_PATH=\$(ls \${DEVICE_PATH}?* 2>/dev/null | head -n 1)
-if [[ -z "\$PARTITION_PATH" || ! -b "\$PARTITION_PATH" ]]; then
-    echo "❌ ERROR: Could not find a partition on '\$DEVICE_PATH'. Please ensure it is partitioned and formatted." >&2
-    exit 1
-fi
-echo "✅ Target partition selected: \$PARTITION_PATH"
-echo ""
+echo "--> Exporting public and private keys for '\$GPG_IDENTIFIER'..."
+gpg --export-secret-keys --armor "\$GPG_IDENTIFIER" > "\$BACKUP_PATH"
 
-# --- [3/4] Confirmation ---
-echo "--> [3/4] Confirmation"
-echo "The following key will be exported:"
-echo "  - GPG Key ID: \$GPG_KEY_ID"
-echo "To the following partition:"
-echo "  - Device: \$PARTITION_PATH"
-read -p "Are you sure you want to proceed? (y/N) " -n 1 -r < /dev/tty
-echo
-if [[ ! \$REPLY =~ ^[Yy]$ ]]; then
-    echo "Backup aborted."
-    exit 0
-fi
-echo ""
+echo "✅ Backup Complete! The key has been backed up to \$BACKUP_PATH"
+echo "   Keep this file safe and secure."
+`;
 
-# --- [4/4] Mount, Export, Unmount ---
-echo "--> [4/4] Performing backup..."
-MOUNT_POINT=\$(mktemp -d)
-cleanup() {
-    if mountpoint -q "\$MOUNT_POINT"; then
-        echo "    -> Unmounting device..."
-        sudo umount "\$MOUNT_POINT"
-    fi
-    sudo rmdir "\$MOUNT_POINT"
-}
-trap cleanup EXIT SIGINT SIGTERM
+const RESTORE_SCRIPT_RAW = `#!/bin/bash
+set -euo pipefail
 
-echo "    -> Mounting \$PARTITION_PATH at \$MOUNT_POINT..."
-if ! sudo mount "\$PARTITION_PATH" "\$MOUNT_POINT"; then
-    echo "❌ ERROR: Failed to mount the device." >&2
-    echo "   Please ensure the partition is formatted with a readable filesystem (e.g., ext4, vfat)." >&2
+echo "--- GPG Key Restore Ritual ---"
+read -p "Enter the path to the backup file to restore (e.g., /media/usb/mykey.asc): " BACKUP_PATH
+
+if [ ! -f "\$BACKUP_PATH" ]; then
+    echo "❌ ERROR: Backup file not found at '\$BACKUP_PATH'" >&2
     exit 1
 fi
 
-PUBLIC_KEY_FILE="\$MOUNT_POINT/kael_gpg_backup_\$(date +%F)_public.asc"
-PRIVATE_KEY_FILE="\$MOUNT_POINT/kael_gpg_backup_\$(date +%F)_private.asc"
+echo "--> Importing key from backup..."
+gpg --import "\$BACKUP_PATH"
 
-echo "    -> Exporting public key..."
-gpg --armor --export "\$GPG_KEY_ID" > "\$PUBLIC_KEY_FILE"
-
-echo "    -> Exporting private key..."
-gpg --armor --export-secret-keys "\$GPG_KEY_ID" > "\$PRIVATE_KEY_FILE"
-
-# The trap will handle unmounting.
-# We call it explicitly here for clarity before disabling the trap for a clean exit.
-cleanup
-trap - EXIT
-
-echo ""
-echo "✨ Ritual Complete! Your GPG keys have been backed up."
-echo "   Files are located on your USB drive:"
-echo "     - \$(basename \$PUBLIC_KEY_FILE)"
-echo "     - \$(basename \$PRIVATE_KEY_FILE)"
-echo -e "\\n\\033[1;33mRemember to eject the USB drive safely and store it in a secure location.\\033[0m"
+echo "--> You may need to trust the newly imported key. To do so:"
+echo "    1. Get the key ID: gpg --list-keys"
+echo "    2. Edit the key: gpg --edit-key <KEY_ID>"
+echo "    3. In the gpg prompt, type: trust"
+echo "    4. Choose level 5 (ultimate trust), then type: quit"
+echo "✅ Restore Complete!"
 `;
 
 export const KeyBackupModal: React.FC<KeyBackupModalProps> = ({ onClose }) => {
-  const encodedScript = btoa(unescape(encodeURIComponent(BACKUP_SCRIPT_RAW)));
-  const finalCommand = `echo "${encodedScript}" | base64 --decode | bash`;
-  
-  return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
-        <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-2xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                 <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
-                    <KeyIcon className="w-5 h-5 text-dragon-fire" />
-                    <span>GPG Key Backup Ritual</span>
-                </h2>
-                <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">
-                    <CloseIcon className="w-5 h-5" />
-                </button>
-            </div>
-            <div className="overflow-y-auto pr-2 text-forge-text-secondary leading-relaxed space-y-4">
-                <p className="text-lg text-dragon-fire/90">
-                    <strong className="font-bold">CAUTION:</strong> This ritual will export your <strong className="text-dragon-fire">private GPG key</strong>. This key is the master key to your digital identity. Guard it well.
-                </p>
-                <p>
-                    This incantation will guide you through safely exporting both your public and private GPG keys to a connected USB drive.
-                </p>
-                 <p className="text-sm p-3 bg-orc-steel/10 border-l-4 border-orc-steel rounded">
-                   The ritual will first identify your GPG key and list all available storage devices. It will then ask you to confirm the target device before mounting it, exporting the keys, and safely unmounting it.
-                </p>
-                
-                <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">The Backup Incantation</h3>
-                <p>
-                    Ensure your USB drive is connected, then run this command.
-                </p>
-                <CodeBlock lang="bash">{finalCommand}</CodeBlock>
+    const encodedBackup = btoa(unescape(encodeURIComponent(BACKUP_SCRIPT_RAW)));
+    const backupCommand = `echo "${encodedBackup}" | base64 --decode | bash`;
+    
+    const encodedRestore = btoa(unescape(encodeURIComponent(RESTORE_SCRIPT_RAW)));
+    const restoreCommand = `echo "${encodedRestore}" | base64 --decode | bash`;
+
+    return (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
+            <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-3xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                     <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
+                        <UsbDriveIcon className="w-5 h-5 text-dragon-fire" />
+                        <span>GPG Key Backup & Restore</span>
+                    </h2>
+                    <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">
+                        <CloseIcon className="w-5 h-5" />
+                    </button>
+                </div>
+                <div className="overflow-y-auto pr-2 text-forge-text-secondary leading-relaxed space-y-4">
+                    <p>
+                        A wise precaution, Architect. A GPG key is the heart of your identity in the forge. These rituals allow you to create a secure, portable backup of your key and restore it when needed.
+                    </p>
+                    
+                    <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">Backup Ritual</h3>
+                    <p>
+                        This incantation will export your secret GPG key to a single armored file. Store this file on a secure, external device.
+                    </p>
+                    <CodeBlock lang="bash">{backupCommand}</CodeBlock>
+
+                     <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">Restore Ritual</h3>
+                    <p>
+                        This incantation will import a GPG key from a backup file, restoring your identity to a new system.
+                    </p>
+                    <CodeBlock lang="bash">{restoreCommand}</CodeBlock>
+                </div>
             </div>
         </div>
-    </div>
-  );
+    );
 };

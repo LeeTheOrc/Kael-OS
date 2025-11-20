@@ -1,13 +1,12 @@
 
 import React, { useState } from 'react';
-import { LinkState } from '../../types';
+import type { LinkState } from '../../types';
 
 interface LinkStateIndicatorProps {
     linkState: LinkState;
-    onToggle: () => void;
 }
 
-const LinkStateIndicator: React.FC<LinkStateIndicatorProps> = ({ linkState, onToggle }) => {
+const LinkStateIndicator: React.FC<LinkStateIndicatorProps> = ({ linkState }) => {
     const isOnline = linkState === 'online';
     const [isHovered, setIsHovered] = useState(false);
 
@@ -16,8 +15,8 @@ const LinkStateIndicator: React.FC<LinkStateIndicatorProps> = ({ linkState, onTo
         : 'bg-forge-text-secondary/50';
 
     const tooltipText = isOnline
-      ? "Online: Connected to Gemini for advanced blueprint creation."
-      : "Offline: The UI's connection to Gemini is severed. Your forged OS will still have its local AI core.";
+      ? "Online: Connected to Gemini."
+      : "Offline: Connection to Gemini is severed.";
 
     return (
         <div 
@@ -25,10 +24,9 @@ const LinkStateIndicator: React.FC<LinkStateIndicatorProps> = ({ linkState, onTo
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <button
-                onClick={onToggle}
+            <div
                 className={`w-3 h-3 rounded-full transition-colors ${indicatorClasses}`}
-                aria-label={`Current status: ${linkState}. Click to toggle.`}
+                aria-label={`Current status: ${linkState}.`}
             />
             {isHovered && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-forge-panel border border-forge-border text-forge-text-secondary text-xs rounded-lg shadow-lg z-10 animate-fade-in-fast">
@@ -42,10 +40,9 @@ const LinkStateIndicator: React.FC<LinkStateIndicatorProps> = ({ linkState, onTo
 
 interface LogoProps {
     linkState: LinkState;
-    onToggle?: () => void;
 }
 
-export const Logo: React.FC<LogoProps> = ({ linkState, onToggle }) => (
+export const Logo: React.FC<LogoProps> = ({ linkState }) => (
   <div className="flex items-center gap-3 text-2xl font-semibold text-forge-text-primary group">
     <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
         <svg
@@ -62,9 +59,9 @@ export const Logo: React.FC<LogoProps> = ({ linkState, onToggle }) => (
             <path d="M4 20V4M4 12h8M12 12l6-8M12 12l6 8"/>
         </svg>
     </div>
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 font-display tracking-wider">
         <span>Kael AI</span>
-        {onToggle && <LinkStateIndicator linkState={linkState} onToggle={onToggle} />}
+        <LinkStateIndicator linkState={linkState} />
     </div>
   </div>
 );

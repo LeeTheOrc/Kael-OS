@@ -1,6 +1,7 @@
+
 import React from 'react';
-import { CloseIcon, ComputerDesktopIcon } from '../core/Icons';
-import { CodeBlock } from '../core/CodeBlock';
+import { CloseIcon, ComputerDesktopIcon } from './core/Icons';
+import { CodeBlock } from './core/CodeBlock';
 
 interface ForgeSetupModalProps {
   onClose: () => void;

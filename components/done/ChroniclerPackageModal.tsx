@@ -1,5 +1,6 @@
+
+
 import React from 'react';
-// FIX: Update import paths for core components
 import { CloseIcon, PackageIcon } from '../core/Icons';
 import { CodeBlock } from '../core/CodeBlock';
 
@@ -7,165 +8,337 @@ interface ChroniclerPackageModalProps {
   onClose: () => void;
 }
 
-const FORGE_CHRONICLER_SCRIPT_RAW = `#!/bin/bash
-set -x # Activate the Rite of Scrying (Debug Trace)
+const FORGE_SCRIPT_RAW = `#!/bin/bash
 set -euo pipefail
 
 # --- CONFIGURATION ---
-CHRONICLER_DIR="$HOME/forge/packages/chronicler"
+PKG_DIR="\$HOME/forge/packages/chronicler"
+PKG_NAME="chronicler"
+INSTALL_PATH="/usr/local/bin"
 
 # --- FILE CONTENTS ---
-# Using heredocs to safely store the content of each file.
-# The 'EOF' marker prevents shell expansion inside the heredoc.
+CHRONICLER_SCRIPT_CONTENT=\$(cat <<'EOF'
+#!/bin/bash
+# Chronicler v4.4 - The Guardian (Reports Edition)
+set -euo pipefail
 
-PKGBUILD_CONTENT=$(cat <<'EOF'
+# --- CONFIGURATION ---
+# Base path: ~/ChroniclesReports
+BASE_DIR="\$HOME/ChroniclesReports"
+# Date Subfolder Format: DDMMYYYY (e.g., 19112025)
+DATE_ID=\$(date +"%d%m%Y")
+# Time Tag for filenames: HH-MM-SS
+TIME_ID=\$(date +"%H-%M-%S")
+
+# The folder for today's chronicles
+DAILY_DIR="\$BASE_DIR/\$DATE_ID"
+# Global operation log
+LOG_FILE="\$BASE_DIR/chronicler.log"
+
+# Ensure the daily directory exists
+mkdir -p "\$DAILY_DIR"
+
+# --- FUNCTIONS ---
+log() {
+    echo "[\$(date +"%Y-%m-%d %H:%M:%S")] \$1" >> "\$LOG_FILE"
+}
+
+print_help() {
+    echo "Chronicler v4.4: The Guardian Flight Recorder"
+    echo "Reports Location: \$DAILY_DIR"
+    echo ""
+    echo "Usage: chronicler [command] [options]"
+    echo ""
+    echo "Modes:"
+    echo "  (default)           Start a full terminal recording session."
+    echo "  exec <cmd> [args]   Run a specific command wrapped in a recording session."
+    echo "  <file_path>         Snapshot a specific file to the daily folder."
+    echo ""
+    echo "Options:"
+    echo "  --list <file>       List backups for a file (searches all dates)."
+    echo "  --restore <file>    Restore a file."
+    echo "  --help              Show this help."
+}
+
+dump_file_content() {
+    local fpath="\$1"
+    echo ""
+    echo "================================================================"
+    echo ">>> CHRONICLER CONTENT DUMP START: \$fpath"
+    echo "================================================================"
+    if [ -f "\$fpath" ]; then
+        cat "\$fpath"
+    else
+        echo "[File does not exist]"
+    fi
+    echo ""
+    echo "================================================================"
+    echo ">>> CHRONICLER CONTENT DUMP END"
+    echo "================================================================"
+}
+
+# --- TEMPORAL SCRYING (Dynamic Change Detection) ---
+scan_for_changes() {
+    local session_log="\$1"
+    local start_time="\$2"
+
+    echo "" >> "\$session_log"
+    echo "######################################################################" >> "\$session_log"
+    echo "# CHRONICLER OVERSEER REPORT (Modified Artifacts)" >> "\$session_log"
+    echo "######################################################################" >> "\$session_log"
+    
+    # Use find to locate files modified after the start timestamp.
+    # We exclude common noise directories and our own report directory to keep the report clean.
+    # FIX: Double-escaped backslashes for JS template literal compatibility.
+    CHANGES_FOUND=\$(find /etc /usr/local/bin "\$HOME/.config" "\$HOME" \\
+        -mount \\
+        \\( \\
+            -path "*/.git" -o \\
+            -path "*/.cache" -o \\
+            -path "*/.local/share" -o \\
+            -path "*/node_modules" -o \\
+            -path "*/build" -o \\
+            -path "*/artifacts" -o \\
+            -path "*/.mozilla" -o \\
+            -path "*/.vscode" -o \\
+            -path "\$BASE_DIR" \\
+        \\) -prune \\
+        -o -type f -newermt "@\$start_time" \\
+        ! -name "mtab" \\
+        ! -name "adjtime" \\
+        ! -name "ld.so.cache" \\
+        ! -name "*.log" \\
+        ! -name ".zsh_history" \\
+        ! -name ".bash_history" \\
+        ! -name ".lesshst" \\
+        ! -name ".viminfo" \\
+        ! -name "*.swp" \\
+        ! -name ".Xauthority" \\
+        -print 2>/dev/null || true)
+
+    if [ -z "\$CHANGES_FOUND" ]; then
+        echo ">>> No significant configuration changes detected." >> "\$session_log"
+        return
+    fi
+
+    IFS=\$'\n'
+    for f in \$CHANGES_FOUND; do
+        # Don't log the session file itself
+        if [[ "\$f" == "\$session_log" ]]; then continue; fi
+        
+        # Check file size (skip if > 100KB)
+        fsize=\$(stat -c%s "\$f" 2>/dev/null || echo 0)
+        if [ "\$fsize" -gt 102400 ]; then
+            echo ">>> DETECTED MODIFICATION: \$f (Skipped - Too Large: \${fsize} bytes)" >> "\$session_log"
+            continue
+        fi
+
+        # Check if binary
+        if grep -qI . "\$f" 2>/dev/null; then
+             echo "" >> "\$session_log"
+             echo ">>> DETECTED MODIFICATION: \$f" >> "\$session_log"
+             echo "----------------------------------------------------------------------" >> "\$session_log"
+             cat "\$f" >> "\$session_log" 2>/dev/null || echo "[Permission Denied - Content Protected]" >> "\$session_log"
+             echo "" >> "\$session_log"
+             echo "----------------------------------------------------------------------" >> "\$session_log"
+        else
+             echo ">>> DETECTED MODIFICATION: \$f (Skipped - Binary File)" >> "\$session_log"
+        fi
+    done
+    unset IFS
+}
+
+start_recording() {
+    # Filename has time in it
+    SESSION_FILE="\$DAILY_DIR/session_\${TIME_ID}.txt"
+    START_EPOCH=\$(date +%s)
+    
+    # Tabula Rasa: Clear screen for a fresh start
+    clear
+    echo "================================================================"
+    echo "   KAEL CHRONICLER v4.4 (THE GUARDIAN)   "
+    echo "================================================================"
+    echo ">>> Flight Recorder Engaged."
+    echo ">>> Saving to: \$SESSION_FILE"
+    echo ">>> Temporal Scrying Active: I will watch for ANY file changes."
+    echo ">>> Type 'exit' or press Ctrl+D to end session."
+    echo "================================================================"
+    
+    # Start script.
+    script -f -q "\$SESSION_FILE"
+    
+    echo ">>> The Overseer is scanning for artifacts modified during this session..."
+    scan_for_changes "\$SESSION_FILE" "\$START_EPOCH"
+    echo "================================================================"
+    echo ">>> CHRONICLER FLIGHT RECORDER STOPPED"
+    echo "================================================================"
+}
+
+# --- SCRIPT MAIN ---
+
+if [ \$# -eq 0 ]; then
+    start_recording
+    exit 0
+fi
+
+case "\$1" in
+    --help|-h)
+        print_help
+        exit 0
+        ;;
+
+    exec)
+        # Guardian Protocol: Run a single command wrapped in script
+        shift
+        if [ "\$1" == "--" ]; then shift; fi
+        if [ \$# -eq 0 ]; then echo "Error: No command provided."; exit 1; fi
+        
+        CMD_NAME=\$(basename "\$1")
+        CMD_ARGS="\$*"
+        # Use time in filename for execution logs
+        SESSION_FILE="\$DAILY_DIR/cmd_\${TIME_ID}_\${CMD_NAME}.log"
+        
+        script -q -e -c "\$CMD_ARGS" "\$SESSION_FILE"
+        exit_code=\$?
+        
+        log "EXEC: '\$CMD_ARGS' -> \$SESSION_FILE (Exit: \$exit_code)"
+        exit \$exit_code
+        ;;
+
+    --record|-r)
+        start_recording
+        ;;
+
+    --list)
+        shift
+        FILE_PATH=\$1
+        if [ ! -f "\$FILE_PATH" ]; then echo "Error: File '\$FILE_PATH' not found."; exit 1; fi
+        BASENAME=\$(basename -- "\$FILE_PATH")
+        
+        echo "Searching Chronicles for backups of: \$BASENAME"
+        # Search the entire BASE_DIR for files matching the basename
+        find "\$BASE_DIR" -type f -name "\${BASENAME}_*" | sort
+        ;;
+
+    --cat)
+        shift
+        FILE_PATH=\$1
+        dump_file_content "\$FILE_PATH"
+        ;;
+
+    --restore)
+        shift
+        FILE_PATH=\$1
+        if [ ! -f "\$FILE_PATH" ]; then echo "Error: File '\$FILE_PATH' not found."; exit 1; fi
+        BASENAME=\$(basename -- "\$FILE_PATH")
+        
+        echo "Searching Chronicles for backups..."
+        TMP_FILE=\$(mktemp)
+        trap 'rm -f -- "\$TMP_FILE"' EXIT
+        
+        # Find backups across all dates
+        find "\$BASE_DIR" -type f -name "\${BASENAME}_*" | sort -r > "\$TMP_FILE"
+        
+        if [ ! -s "\$TMP_FILE" ]; then
+             echo "No backups found for \$BASENAME"
+             exit 1
+        fi
+
+        echo "Select a backup to restore for \$FILE_PATH:"
+        select backup_file in \$(cat "\$TMP_FILE"); do
+            if [ -n "\$backup_file" ]; then
+                read -p "Restore from '\$backup_file'? (y/N) " -n 1 -r
+                echo
+                if [[ \$REPLY =~ ^[Yy]\$ ]]; then
+                    cp "\$backup_file" "\$FILE_PATH"
+                    echo "Restored."
+                    log "RESTORED: '\$FILE_PATH' from '\$backup_file'"
+                    dump_file_content "\$FILE_PATH"
+                else
+                    echo "Restore aborted."
+                fi
+                break
+            else
+                echo "Invalid selection."
+            fi
+        done
+        ;;
+
+    --purge)
+        echo "Purge is disabled in this version to protect historical records."
+        echo "Please manually delete old folders in \$BASE_DIR if needed."
+        ;;
+
+    --force)
+        shift
+        FILE_PATH=\$1
+        FORCE=true
+        # Fall through to default case logic below
+        ;;
+    
+    *)
+        # Snapshot Logic (Backup a specific file)
+        if [ "\$1" == "--force" ]; then shift; FORCE=true; else FILE_PATH=\$1; FORCE=false; fi
+        
+        if [ ! -f "\$FILE_PATH" ]; then
+            echo "Error: File not found at '\$FILE_PATH'" >&2
+            exit 1
+        fi
+
+        BASENAME=\$(basename -- "\$FILE_PATH")
+        
+        # Backup file uses time tag in filename
+        BACKUP_FILE="\$DAILY_DIR/\${BASENAME}_\${TIME_ID}"
+        
+        cp "\$FILE_PATH" "\$BACKUP_FILE"
+        
+        echo "Chronicler has snapshot '\$FILE_PATH' to:"
+        echo "\$BACKUP_FILE"
+        log "BACKED UP: '\$FILE_PATH' to '\$BACKUP_FILE'"
+        
+        dump_file_content "\$FILE_PATH"
+        ;;
+esac
+EOF
+)
+
+PKGBUILD_CONTENT=\$(cat <<'EOF'
 # Maintainer: Kael AI for The Architect
 pkgname=chronicler
-pkgver=2.0
+pkgver=4.4
 pkgrel=1
-pkgdesc="A tool to record system logs and terminal sessions for debugging with Kael AI."
+pkgdesc="Kael's Overseer: Reports edition with date-based organization."
 arch=('any')
 url="https://github.com/LeeTheOrc/Kael-OS"
 license=('GPL3')
-install=chronicler.install
+depends=('util-linux' 'coreutils' 'findutils')
 source=("chronicler.sh")
 sha256sums=('SKIP')
 
 package() {
-    install -Dm755 "\${srcdir}/chronicler.sh" "\${pkgdir}/usr/local/bin/chronicler"
+    install -Dm755 "\$srcdir/chronicler.sh" "\$pkgdir/usr/bin/chronicler"
 }
 EOF
 )
 
-CHRONICLER_SH_CONTENT=$(cat <<'EOF'
-#!/bin/bash
-# Kael Chronicler v2.0 (Adamantite Core)
-set -euo pipefail
-
-# --- CONFIGURATION ---
-MAIN_DIR="$HOME/ChroniclesReports"
-DAILY_DIR="$MAIN_DIR/$(date +%d%m%Y)"
-TIMESTAMP=$(date +%H-%M-%S)
-FINAL_LOG_FILE="$DAILY_DIR/kael-chronicle-\${TIMESTAMP}.txt"
-SYSTEM_LOG_TMP=$(mktemp)
-SESSION_LOG_TMP=$(mktemp)
-
-# --- CLEANUP FUNCTION & TRAP ---
-cleanup() {
-    local exit_code=$?
-    # Using '|| true' prevents the script from exiting with an error if kill fails
-    # Check if JOURNAL_PID is set and is a number before trying to kill it.
-    if [[ -n "\${JOURNAL_PID-}" && "\$JOURNAL_PID" =~ ^[0-9]+$ ]]; then
-        kill \$JOURNAL_PID &>/dev/null || true
-    fi
-    rm -f "\${SYSTEM_LOG_TMP}" "\${SESSION_LOG_TMP}"
-    # Only show interrupted message on an actual interruption (non-zero exit code)
-    if [ \${exit_code} -ne 0 ]; then
-        echo -e "\\n--- Chronicle interrupted. Cleaning up temp files. ---"
-    fi
-}
-trap cleanup EXIT SIGINT SIGTERM
-
-# --- SETUP ---
-echo "--- Preparing the Chronicle Chamber ---"
-mkdir -p "\${DAILY_DIR}"
-echo "Reports will be saved in: \${DAILY_DIR}"
-
-# --- SCRIPT START ---
-echo "--- Chronicler's Orb Activated ---"
-echo "Recording system logs and your terminal session."
-echo "The final combined log will be saved to: \${FINAL_LOG_FILE}"
-echo "------------------------------------"
-echo ""
-
-# Start system log capture in the background
-journalctl --no-pager -f > "\${SYSTEM_LOG_TMP}" &
-JOURNAL_PID=\$!
-
-# Start interactive session recording
-script -q -f "\${SESSION_LOG_TMP}"
-
-# --- COMBINE AND CLEANUP (after 'script' has finished) ---
-echo -e "\\n--- Chronicler's Orb Deactivated ---"
-
-# Stop the background system log capture now that the session is over
-echo "--> Stopping system log capture..."
-# The trap will handle the final kill, but we can be explicit here too.
-if [[ -n "\${JOURNAL_PID-}" && "\$JOURNAL_PID" =~ ^[0-9]+$ ]]; then
-    kill \$JOURNAL_PID &>/dev/null || true
-    wait \$JOURNAL_PID &>/dev/null || true
-fi
-
-
-echo "--> Combining logs into final chronicle: \${FINAL_LOG_FILE}"
-
-{
-    echo "######################################################################"
-    echo "#"
-    echo "#  KAEL CHRONICLE - Recorded on \$(date)"
-    echo "#"
-    echo "######################################################################"
-    echo ""
-    echo ""
-    echo "======================================================================"
-    echo " SYSTEM LOG (journalctl)"
-    echo "======================================================================"
-    echo ""
-    cat "\${SYSTEM_LOG_TMP}"
-    echo ""
-    echo ""
-    echo "======================================================================"
-    echo " ARCHITECT'S TERMINAL SESSION"
-    echo "======================================================================"
-    echo ""
-    cat "\${SESSION_LOG_TMP}" | col -b
-
-} > "\${FINAL_LOG_FILE}"
-
-# Disable the trap for a clean exit, so it doesn't print the "interrupted" message.
-trap - EXIT
-
-echo "✅ Chronicle saved successfully to '\${FINAL_LOG_FILE}'."
-echo "You can now upload this file for me to analyze."
-EOF
-)
-
-INSTALL_FILE_CONTENT=$(cat <<'EOF'
-post_install() {
-    echo "Securing Chronicler with an Adamantite Core (making it immutable)..."
-    chattr +i /usr/local/bin/chronicler || echo "Warning: Could not set immutable attribute on /usr/local/bin/chronicler"
-    echo "To update chronicler in the future, first run: sudo chattr -i /usr/local/bin/chronicler"
-}
-
-pre_upgrade() {
-    echo "Unlocking Chronicler for upgrade..."
-    chattr -i /usr/local/bin/chronicler || true
-}
-
-post_upgrade() {
-    post_install
-}
-
-pre_remove() {
-    echo "Unlocking Chronicler for removal..."
-    chattr -i /usr/local/bin/chronicler || true
-}
-EOF
-)
-
-echo "--- The Chronicler Forging Ritual ---"
+echo "--- Forging the Chronicler v4.4 Artifact ---"
 
 # --- STEP 1: Prepare the Forge ---
-echo "--> [1/4] Preparing the forge at \${CHRONICLER_DIR}..."
-mkdir -p "\${CHRONICLER_DIR}"
-cd "\${CHRONICLER_DIR}"
+echo "--> [1/4] Preparing the forge at \${PKG_DIR}..."
+mkdir -p "\${PKG_DIR}"
+cd "\${PKG_DIR}"
+
+# --- STEP 1.5: CLEANUP GHOSTS ---
+echo "--> [1.5/4] Cleansing forge of old artifacts..."
+rm -rf src pkg *.pkg.tar.zst *.pkg.tar.zst.sig
+echo "✅ Workspace purified."
+
 echo "✅ Forge is ready."
 
 # --- STEP 2: Scribe the Scrolls ---
-echo "--> [2/4] Scribing the sacred scrolls (PKGBUILD, chronicler.sh, chronicler.install)..."
-echo "$PKGBUILD_CONTENT" > PKGBUILD
-echo "$CHRONICLER_SH_CONTENT" > chronicler.sh
-echo "$INSTALL_FILE_CONTENT" > chronicler.install
+echo "--> [2/4] Scribing the sacred scrolls (PKGBUILD, chronicler.sh)..."
+echo "\$PKGBUILD_CONTENT" > PKGBUILD
+echo "\$CHRONICLER_SCRIPT_CONTENT" > chronicler.sh
 chmod +x chronicler.sh
 echo "✅ Scrolls scribed."
 
@@ -174,17 +347,24 @@ echo "--> [3/4] Attuning the runes (updating checksums)..."
 updpkgsums
 echo "✅ Runes attuned."
 
+# --- STEP 3.5: Breaching Charge (Fix for Immutable Attribute) ---
+echo "--> [3.5/4] Breaching immutable seals on legacy artifacts..."
+if [ -f "/usr/local/bin/chronicler" ]; then
+    echo "    -> Unlocking /usr/local/bin/chronicler..."
+    sudo chattr -i "/usr/local/bin/chronicler" 2>/dev/null || true
+fi
+echo "✅ Artifacts unlocked."
+
 # --- STEP 4: Forge and Publish ---
-echo "--> [4/4] Invoking the Athenaeum Scribe..."
-forge-and-publish
+echo "--> [4/4] Invoking the Grand Concordance ritual..."
+grand-concordance
 
 echo ""
-echo "✨ Ritual Complete! The Chronicler artifact has been forged and published."
+echo "✨ Ritual Complete! The Chronicler v4.4 artifact has been forged and published."
 `;
 
 export const ChroniclerPackageModal: React.FC<ChroniclerPackageModalProps> = ({ onClose }) => {
-    // The unified script is encoded to base64 to comply with Rune XVI.
-    const encodedScript = btoa(unescape(encodeURIComponent(FORGE_CHRONICLER_SCRIPT_RAW)));
+    const encodedScript = btoa(unescape(encodeURIComponent(FORGE_SCRIPT_RAW)));
     const finalForgeCommand = `echo "${encodedScript}" | base64 --decode | bash`;
 
     return (
@@ -193,7 +373,7 @@ export const ChroniclerPackageModal: React.FC<ChroniclerPackageModalProps> = ({ 
                 <div className="flex justify-between items-center mb-4 flex-shrink-0">
                      <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
                         <PackageIcon className="w-5 h-5 text-dragon-fire" />
-                        <span>Forge the Chronicler Artifact</span>
+                        <span>Forge Chronicler Package (v4.4 Update)</span>
                     </h2>
                     <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">
                         <CloseIcon className="w-5 h-5" />
@@ -201,15 +381,20 @@ export const ChroniclerPackageModal: React.FC<ChroniclerPackageModalProps> = ({ 
                 </div>
                 <div className="overflow-y-auto pr-2 text-forge-text-secondary leading-relaxed space-y-4">
                     <p>
-                        An excellent decree, Architect! We shall elevate the Chronicler's Orb from a simple script to a true artifact of the Athenaeum. This will make it a core, managed component of every Realm we forge.
+                        Architect, I have synchronized this ritual to <strong className="text-dragon-fire">Chronicler v4.4 (Reports Edition)</strong>.
                     </p>
                     <p className="text-sm p-3 bg-orc-steel/10 border-l-4 border-orc-steel rounded">
-                        This ritual has been reforged to honor our Core Law. It is now a single, unified incantation that performs all necessary steps to forge and publish the <code className="font-mono text-xs">chronicler</code> package.
+                        <strong className="text-orc-steel">New Storage Protocol:</strong><br/>
+                        Reports are now saved to: <code className="font-mono text-xs">~/ChroniclesReports/DDMMYYYY/</code><br/>
+                        Filenames now include the time: <code className="font-mono text-xs">session_HH-MM-SS.txt</code>
+                    </p>
+                    <p className="text-sm text-forge-text-secondary">
+                        This update ensures your chronicles are perfectly organized by date for easy review.
                     </p>
                     
                     <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">The Unified Incantation</h3>
                     <p>
-                        Run this single command in your terminal. It will create the package files, update the checksums, and invoke the <code className="font-mono text-xs">forge-and-publish</code> familiar to complete the ritual.
+                        Run this single command in your terminal to re-forge and install the upgraded Chronicler.
                     </p>
                     <CodeBlock lang="bash">{finalForgeCommand}</CodeBlock>
                 </div>

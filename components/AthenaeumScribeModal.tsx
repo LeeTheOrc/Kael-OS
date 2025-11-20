@@ -1,16 +1,18 @@
+
+
 import React from 'react';
-import { CloseIcon, BookOpenIcon } from '../core/Icons';
-import { CodeBlock } from '../core/CodeBlock';
+import { CloseIcon, BookOpenIcon } from './core/Icons';
+import { CodeBlock } from './core/CodeBlock';
 
 interface AthenaeumScribeModalProps {
   onClose: () => void;
 }
 
 const SCRIBE_SCRIPT_RAW = `#!/bin/bash
-# Kael Athenaeum Scribe (forge-and-publish) v3.0 Pre-configured Publisher
+# Kael Athenaeum Scribe (forge-and-publish) v3.3 - WebDAV Compatibility Edition
 set -euo pipefail
 
-echo "--- Athenaeum Scribe Ritual (v3.0 Pre-configured) ---"
+echo "--- Athenaeum Scribe Ritual (v3.3) ---"
 echo "This ritual forges, signs, and publishes an artifact to local and all remote Athenaeums."
 
 # --- [1/5] PREPARATION ---
@@ -123,32 +125,81 @@ else
 fi
 echo ""
 
-# --- [5/5] PUBLISH TO FTPS ATHENAEUM ---
-echo "--> [5/5] Publishing to the pre-configured FTPS Athenaeum..."
+# --- [5/5] PUBLISH TO WEBDISK ATHENAEUM ---
+echo "--> [5/5] Publishing to WebDisk Athenaeum..."
 
-FTP_HOST="ftp.leroyonline.co.za"
-FTP_USER="leroy@leroyonline.co.za"
-FTP_PASS='LeRoy0923!'
-FTP_BASE_PATH="/forge"
-FTP_REPO_PATH="\$FTP_BASE_PATH/repo"
-TEMP_FTPS_STAGE=$(mktemp -d)
+LOCAL_WEBDISK_REPO="\$USER_HOME/WebDisk/repo"
+USE_LOCAL_WEBDISK=false
 
-echo "    -> Staging local repository for FTPS transmutation..."
-rsync -a "\$LOCAL_REPO_PATH/" "\$TEMP_FTPS_STAGE/"
+if [ -d "\$LOCAL_WEBDISK_REPO" ]; then
+    echo "    -> Local WebDisk mount detected at '\$LOCAL_WEBDISK_REPO'."
+    if touch "\$LOCAL_WEBDISK_REPO/.kael_probe" 2>/dev/null; then
+        rm "\$LOCAL_WEBDISK_REPO/.kael_probe"
+        USE_LOCAL_WEBDISK=true
+    else
+         echo "    ⚠️  WebDisk mount appears read-only or unstable. Falling back to network sync."
+    fi
+fi
 
-echo "    -> Transmuting database name for FTPS (kael-os-ftps.db)..."
-(
-    cd "\$TEMP_FTPS_STAGE"
-    find . -maxdepth 1 -name "kael-os-local.db*" -exec bash -c 'mv "$0" "\${0/kael-os-local/kael-os-ftps}"' {} \\;
-)
+if [ "\$USE_LOCAL_WEBDISK" = true ]; then
+    echo "    -> 🚀 Accelerating: Syncing via local filesystem..."
+    
+    # rsync local repo to webdisk mount
+    # Using --copy-links to handle WebDAV limitation
+    rsync -rtv --delete --copy-links --no-owner --no-group "\$LOCAL_REPO_PATH/" "\$LOCAL_WEBDISK_REPO/"
+    
+    # Transmute
+    echo "    -> Transmuting database names for WebDisk..."
+    (
+        cd "\$LOCAL_WEBDISK_REPO"
+        for db_file in kael-os-local.db*; do
+            if [ -f "\$db_file" ]; then
+                mv "\$db_file" "\${db_file/kael-os-local/kael-os-webdisk}"
+            fi
+        done
+        for files_file in kael-os-local.files*; do
+            if [ -f "\$files_file" ]; then
+                mv "\$files_file" "\${files_file/kael-os-local/kael-os-webdisk}"
+            fi
+        done
+    )
+    echo "✅ WebDisk Athenaeum synchronized via local mount."
 
-echo "    -> Mirroring staged repository to ftps://\$FTP_HOST:21\$FTP_REPO_PATH..."
-COMMANDS="mirror -R -v --delete --only-newer \\"\$TEMP_FTPS_STAGE/\\" \\"\$FTP_REPO_PATH/\\"; quit"
-FTP_OPTIONS="set ftp:ssl-force true; set ssl:verify-certificate no;"
-if ! lftp -c "\$FTP_OPTIONS open -p 21 -u '\$FTP_USER','\$FTP_PASS' ftp://\$FTP_HOST; \$COMMANDS"; then
-    echo "⚠️  WARNING: FTPS publish failed. Please check your connection and credentials."
 else
-    echo "✅ Published to FTPS Athenaeum at \$FTP_HOST."
+    echo "    -> Using classic FTPS upload..."
+    FTP_HOST="leroyonline.co.za"
+    FTP_USER="leroy@leroyonline.co.za"
+    FTP_PASS='LeRoy0923!'
+    FTP_BASE_PATH="/forge"
+    FTP_REPO_PATH="\$FTP_BASE_PATH/repo"
+    TEMP_FTPS_STAGE=$(mktemp -d)
+
+    echo "    -> Staging local repository for FTPS transmutation..."
+    rsync -a "\$LOCAL_REPO_PATH/" "\$TEMP_FTPS_STAGE/"
+
+    echo "    -> Transmuting database name for FTPS (kael-os-ftps.db)..."
+    (
+        cd "\$TEMP_FTPS_STAGE"
+        for db_file in kael-os-local.db*; do
+            if [ -f "\$db_file" ]; then
+                mv "\$db_file" "\${db_file/kael-os-local/kael-os-ftps}"
+            fi
+        done
+        for files_file in kael-os-local.files*; do
+            if [ -f "\$files_file" ]; then
+                mv "\$files_file" "\${files_file/kael-os-local/kael-os-ftps}"
+            fi
+        done
+    )
+
+    echo "    -> Mirroring staged repository to ftps://\$FTP_HOST:2078\$FTP_REPO_PATH..."
+    COMMANDS="mirror -R -v --delete --only-newer \\"\$TEMP_FTPS_STAGE/\\" \\"\$FTP_REPO_PATH/\\"; quit"
+    FTP_OPTIONS="set ftp:ssl-force true; set ssl:verify-certificate no;"
+    if ! lftp -c "\$FTP_OPTIONS open -p 2078 -u '\$FTP_USER','\$FTP_PASS' ftp://\$FTP_HOST; \$COMMANDS"; then
+        echo "⚠️  WARNING: FTPS publish failed. Please check your connection and credentials."
+    else
+        echo "✅ Published to FTPS Athenaeum at \$FTP_HOST."
+    fi
 fi
 
 echo ""
@@ -184,7 +235,7 @@ export const AthenaeumScribeModal: React.FC<AthenaeumScribeModalProps> = ({ onCl
                 <div className="flex justify-between items-center mb-4 flex-shrink-0">
                      <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
                         <BookOpenIcon className="w-5 h-5 text-dragon-fire" />
-                        <span>The Athenaeum Scribe</span>
+                        <span>The Athenaeum Scribe (v3.3)</span>
                     </h2>
                     <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">
                         <CloseIcon className="w-5 h-5" />
@@ -195,14 +246,17 @@ export const AthenaeumScribeModal: React.FC<AthenaeumScribeModalProps> = ({ onCl
                         A wise decree, Architect. An artifact should be forged once, then distributed to all Athenaeums for resilience and redundancy. I have reforged the Scribe's ritual to do exactly that.
                     </p>
                     <p className="text-sm p-3 bg-orc-steel/10 border-l-4 border-orc-steel rounded">
-                        The <code className="font-mono text-xs">forge-and-publish</code> command is now a global publisher. It will add your new package to the local Athenaeum, then publish it to all configured remote Athenaeums with the correct, platform-specific database names.
+                        The <code className="font-mono text-xs">forge-and-publish</code> command is now a global publisher. It will add your new package to the local Athenaeum, then publish it to all configured remote Athenaeums.
+                    </p>
+                    <p className="text-sm p-3 bg-dragon-fire/10 border-l-4 border-dragon-fire rounded">
+                         <strong className="text-dragon-fire">WebDAV Compatibility:</strong> Updated to safely sync with the WebDisk by copying symbolic links as regular files.
                     </p>
                     
                     <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">Publishing Destinations & Databases</h3>
                      <ul className="list-disc list-inside space-y-2 text-sm">
                         <li><strong className="text-forge-text-primary">Local Athenaeum:</strong> Publishes to <code className="font-mono text-xs">~/forge/repo</code> using <code className="font-mono text-xs">kael-os-local.db</code>.</li>
                         <li><strong className="text-forge-text-primary">GitHub Athenaeum:</strong> Enabled via <code className="font-mono text-xs">gh auth login</code>. Rebuilds the database as <code className="font-mono text-xs">kael-os-repo.db</code>.</li>
-                        <li><strong className="text-forge-text-primary">FTPS Mirror:</strong> Pre-configured. Creates <code className="font-mono text-xs">kael-os-ftps.db</code> for the mirror.</li>
+                        <li><strong className="text-forge-text-primary">WebDisk Mirror:</strong> Uses local mount if available, otherwise falls back to FTPS. Creates <code className="font-mono text-xs">kael-os-webdisk.db</code>.</li>
                     </ul>
 
                     <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">Step 1: Forge the Scribe (One-Time Setup)</h3>

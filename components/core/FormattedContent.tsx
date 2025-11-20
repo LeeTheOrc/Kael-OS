@@ -3,6 +3,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CloseIcon } from './Icons';
+import { CodeBlock } from './CodeBlock';
 
 export const FormattedContent: React.FC<{ text: string }> = ({ text }) => {
     const customComponents = {
@@ -17,19 +18,30 @@ export const FormattedContent: React.FC<{ text: string }> = ({ text }) => {
                     const keywordPart = parts[0]; 
                     const titlePart = parts.slice(1).join(':').trim(); 
                     
-                    // Runes are purple (magic), Quests are green (orc steel)
                     const keywordColor = isRune ? '#e040fb' : '#7aebbe';
                     
                     return (
-                        <h3 {...props} style={{ color: '#ffcc00' }}> 
+                        <h3 {...props} style={{ color: '#ffcc00' }} className="font-display tracking-wider"> 
                             <span style={{ color: keywordColor }}>{keywordPart}</span>
                             <span>: {titlePart}</span> 
                         </h3>
                     );
                 }
             }
-            return <h3 {...props}>{props.children}</h3>;
+            return <h3 {...props} className="font-display tracking-wider">{props.children}</h3>;
         },
+        code({node, inline, className, children, ...props}) {
+            const match = /language-(\w+)/.exec(className || '')
+            return !inline && match ? (
+              <CodeBlock lang={match[1]}>
+                {String(children).replace(/\\n$/, '')}
+              </CodeBlock>
+            ) : (
+              <code className="font-mono text-xs bg-forge-bg px-1 py-0.5 rounded border border-forge-border" {...props}>
+                {children}
+              </code>
+            )
+        }
     };
 
     return (
@@ -58,7 +70,7 @@ interface LoreModalProps {
 export const LoreModal: React.FC<LoreModalProps> = ({ title, icon, content, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
-        <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-2xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+        <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-3xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
                 <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
                     {icon}

@@ -1,101 +1,60 @@
+
 import React from 'react';
-import { CloseIcon, CompletedGrimoireIcon, RocketLaunchIcon, ScrollIcon, SparklesIcon, QuestionMarkIcon, PackageIcon, SignalIcon, EyeIcon, ArrowDownTrayIcon } from '../core/Icons';
-import type { ModalType } from '../App';
+import { CloseIcon, CompletedGrimoireIcon, ScrollIcon, RocketLaunchIcon, SparklesIcon } from '../core/Icons';
+import type { ModalType } from '../../App';
 
 interface LoreArchiveModalProps {
-  onClose: () => void;
-  onNavigate: (modal: ModalType) => void;
+    onClose: () => void;
+    onOpenMenu: (menu: ModalType) => void;
 }
 
-const LoreItem: React.FC<{
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  onClick: () => void;
-}> = ({ icon, title, description, onClick }) => (
-    <button
-        onClick={onClick}
-        className="flex items-start gap-4 p-4 rounded-lg bg-forge-bg/50 hover:bg-forge-border/50 transition-colors w-full text-left"
-    >
-        <div className="flex-shrink-0 text-dragon-fire">{icon}</div>
+const LoreButton: React.FC<{title: string, description: string, icon: React.ReactNode, onClick: () => void}> = ({ title, description, icon, onClick }) => (
+    <button onClick={onClick} className="w-full text-left p-4 bg-forge-bg/50 hover:bg-forge-border/50 border border-forge-border rounded-lg transition-colors flex items-center gap-4">
+        <div className="text-dragon-fire">{icon}</div>
         <div>
-            <h4 className="font-bold text-forge-text-primary">{title}</h4>
-            <p className="text-sm text-forge-text-secondary mt-1">{description}</p>
+            <h3 className="font-bold text-forge-text-primary font-display tracking-wider">{title}</h3>
+            <p className="text-sm text-forge-text-secondary">{description}</p>
         </div>
     </button>
 );
 
-export const LoreArchiveModal: React.FC<LoreArchiveModalProps> = ({ onClose, onNavigate }) => {
-  return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
-        <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-lg p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                 <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
-                    <CompletedGrimoireIcon className="w-6 h-6 text-dragon-fire" />
-                    <span>The Lore Archive</span>
-                </h2>
-                <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">
-                    <CloseIcon className="w-5 h-5" />
-                </button>
-            </div>
-            <div className="overflow-y-auto pr-2 text-forge-text-secondary leading-relaxed space-y-3">
-                <p>
-                    Herein lie the foundational texts and completed quests of our forge. Consult these grimoires to understand our purpose and history.
-                </p>
-                <div className="space-y-2 mt-4">
-                    <LoreItem
-                        icon={<ScrollIcon className="w-6 h-6" />}
+export const LoreArchiveModal: React.FC<LoreArchiveModalProps> = ({ onClose, onOpenMenu }) => {
+    return (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
+            <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-md p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                     <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
+                        <CompletedGrimoireIcon className="w-5 h-5 text-dragon-fire" />
+                        <span>The Grand Grimoire</span>
+                    </h2>
+                    <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">
+                        <CloseIcon className="w-5 h-5" />
+                    </button>
+                </div>
+                <div className="overflow-y-auto pr-2 text-forge-text-secondary leading-relaxed space-y-3">
+                    <p className="mb-4">
+                       Welcome to the Lore Archive, Architect. These are the sacred texts that define our quest.
+                    </p>
+                    <LoreButton 
                         title="The Core Law"
-                        description="View the immutable runes that define our forge, our Realms, and our partnership."
-                        onClick={() => onNavigate('law')}
+                        description="The immutable runes that define our project."
+                        icon={<ScrollIcon className="w-6 h-6" />}
+                        onClick={() => onOpenMenu('law')}
                     />
-                    <LoreItem
+                    <LoreButton 
+                        title="Level-Up Manifesto"
+                        description="Our strategic roadmap and quest log."
                         icon={<RocketLaunchIcon className="w-6 h-6" />}
-                        title="Level Up Manifesto"
-                        description="Consult our quest log and strategic roadmap for leveling up the forge."
-                        onClick={() => onNavigate('levelup')}
+                        onClick={() => onOpenMenu('levelUp')}
                     />
-                     <LoreItem
-                        icon={<SparklesIcon className="w-6 h-6" />}
+                    <LoreButton 
                         title="Kael's Personality"
-                        description="Understand the cheerful spirit and core principles I bring to our work."
-                        onClick={() => onNavigate('personality')}
-                    />
-                    <div className="border-t border-forge-border/50 my-2 !-mx-4"></div>
-                    <LoreItem
-                        icon={<SignalIcon className="w-6 h-6" />}
-                        title="Grand Concordance"
-                        description="Forge an artifact (if present) and sync the entire local forge with all remotes."
-                        onClick={() => onNavigate('grandConcordance')}
-                    />
-                     <LoreItem
-                        icon={<ArrowDownTrayIcon className="w-6 h-6" />}
-                        title="Grand Forge Setup & Sync"
-                        description="The unified ritual to set up your forge, configure paths, and pull all remote content."
-                        onClick={() => onNavigate('forgeReconciliation')}
-                    />
-                    <LoreItem
-                        icon={<EyeIcon className="w-6 h-6" />}
-                        title="Verify Athenaeums"
-                        description="Check connectivity and status of all local and remote Athenaeums."
-                        onClick={() => onNavigate('athenaeumVerifier')}
-                    />
-                     <div className="border-t border-forge-border/50 my-2 !-mx-4"></div>
-                    <LoreItem
-                        icon={<QuestionMarkIcon className="w-6 h-6" />}
-                        title="How to use Chronicler"
-                        description="Learn how to record a terminal session and system logs for debugging."
-                        onClick={() => onNavigate('chroniclerUsage')}
-                    />
-                    <LoreItem
-                        icon={<PackageIcon className="w-6 h-6" />}
-                        title="Forge the Chronicler Artifact"
-                        description="Craft the Chronicler tool into a managed package within the Athenaeum."
-                        onClick={() => onNavigate('chroniclerPackage')}
+                        description="The spirit and voice of your AI Guardian."
+                        icon={<SparklesIcon className="w-6 h-6" />}
+                        onClick={() => onOpenMenu('personality')}
                     />
                 </div>
             </div>
         </div>
-    </div>
-  );
+    );
 };

@@ -5,8 +5,7 @@ interface GuardianAvatarProps {
     isOnline?: boolean;
 }
 
-export const GuardianAvatar: React.FC<GuardianAvatarProps> = ({ isOnline }) => {
-    // The breathing and pulsing glow make the avatar feel more alive.
+export const GuardianAvatar: React.FC<GuardianAvatarProps> = ({ isOnline = true }) => {
     const onlineGlowClasses = isOnline ? 'animate-pulse-glow' : '';
 
     return (

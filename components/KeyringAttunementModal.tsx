@@ -1,6 +1,7 @@
+
 import React from 'react';
-import { CloseIcon, KeyIcon } from '../core/Icons';
-import { CodeBlock } from '../core/CodeBlock';
+import { CloseIcon, KeyIcon } from './core/Icons';
+import { CodeBlock } from './core/CodeBlock';
 
 interface KeyringAttunementModalProps {
   onClose: () => void;

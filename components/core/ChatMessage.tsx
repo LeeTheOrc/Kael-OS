@@ -12,10 +12,11 @@ interface ChatMessageProps {
 export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const [copied, setCopied] = useState(false);
   const isModel = message.role === 'model';
-  const isWelcome = message.text.includes("Welcome to the Forge, Architect.");
-
+  
   const handleCopy = () => {
-    navigator.clipboard.writeText(message.text);
+    // A regex to strip markdown for a cleaner copy-paste experience
+    const plainText = message.text.replace(/(\*|_|`|#)/g, '');
+    navigator.clipboard.writeText(plainText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -37,34 +38,21 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     <div className={`flex gap-4 animate-fade-in ${isModel ? '' : 'flex-row-reverse'}`}>
       {isModel && <GuardianAvatar isOnline={message.linkState === 'online'} />}
       <div className={`flex flex-col gap-2 ${isModel ? '' : 'items-end'}`}>
-        <div className={`relative w-fit max-w-full md:max-w-2xl lg:max-w-3xl rounded-2xl px-4 py-2.5 ${isModel ? 'bg-gradient-to-br from-forge-panel to-[#1d182e] text-forge-text-primary border-l-4 border-dragon-fire shadow-lg' : 'bg-gradient-to-br from-orc-steel/50 to-magic-purple/50 text-white'}`}>
+        <div className={`relative w-fit max-w-full md:max-w-2xl lg:max-w-3xl rounded-2xl px-4 py-2.5 group ${isModel ? 'bg-gradient-to-br from-forge-panel to-[#1d182e] text-forge-text-primary border-l-4 border-dragon-fire shadow-lg' : 'bg-gradient-to-br from-sky-500/80 to-indigo-600/80 text-white'}`}>
             {isModel && <KaelSigilIcon className="absolute top-2 right-2 w-4 h-4 text-dragon-fire/20" />}
             
-            {isWelcome ? (
-              <FormattedContent text={message.text} />
-            ) : (
-               <div className="prose prose-sm prose-invert max-w-none 
-                        prose-headings:font-display prose-headings:tracking-wider
-                        prose-strong:text-forge-text-primary 
-                        prose-a:text-orc-steel prose-a:no-underline hover:prose-a:underline
-                        prose-li:marker:text-dragon-fire
-                        prose-hr:border-forge-border">
-                <p className="whitespace-pre-wrap font-sans text-base leading-relaxed">{message.text}</p>
-              </div>
-            )}
-
-        </div>
-        {isModel && !isWelcome && (
-            <div className="flex items-center justify-start">
-                <button 
+            <FormattedContent text={message.text} />
+            
+            {isModel && (
+                 <button 
                     onClick={handleCopy}
-                    className="flex items-center gap-1.5 text-xs text-forge-text-secondary hover:text-forge-text-primary transition-colors"
+                    className="absolute bottom-1 right-1 flex items-center gap-1.5 text-xs text-forge-text-secondary/50 hover:text-forge-text-primary transition-all opacity-0 group-hover:opacity-100 p-1 rounded"
+                    aria-label={copied ? 'Copied!' : 'Copy'}
                 >
                     <CopyIcon className="w-3.5 h-3.5" />
-                    <span>{copied ? 'Copied!' : 'Copy'}</span>
                 </button>
-            </div>
-        )}
+            )}
+        </div>
       </div>
     </div>
   );
