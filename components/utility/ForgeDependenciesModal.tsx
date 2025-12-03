@@ -119,12 +119,12 @@ echo "--> [2/5] Probing Athenaeum Reachability..."
 GITHUB_URL="https://leetheorc.github.io/kael-os-repo/kael-os-repo.db"
 WEBDISK_URL="https://leroyonline.co.za/leroy/forge/repo/kael-os-repo.db"
 
-if curl --head --silent --fail "$GITHUB_URL" > /dev/null; then
+if curl --head --silent --fail "\$GITHUB_URL" > /dev/null; then
     echo "✅ GitHub Athenaeum is reachable."
 else
     echo "❌ GitHub Athenaeum appears unreachable."
 fi
-if curl --head --silent --fail "$WEBDISK_URL" > /dev/null; then
+if curl --head --silent --fail "\$WEBDISK_URL" > /dev/null; then
     echo "✅ WebDisk Athenaeum is reachable."
 else
     echo "❌ WebDisk Athenaeum appears unreachable."

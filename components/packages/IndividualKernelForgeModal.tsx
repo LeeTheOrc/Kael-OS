@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { CloseIcon, CpuChipIcon } from '../core/Icons';
 import { CodeBlock } from '../core/CodeBlock';
@@ -11,7 +12,7 @@ const TARGET_ARCHS = ["x86-64-v2", "x86-64-v3", "x86-64-v4"];
 
 const generateScript = (base: string, arch: string): string => {
 
-    return String.raw`#!/bin/bash
+    return `#!/bin/bash
 (
 set -euo pipefail
 
@@ -20,7 +21,7 @@ echo "This ritual forges one specific, optimized kernel from source."
 echo ""
 
 # --- [STEP 0/5] CONFIGURATION ---
-export USER_HOME=$(getent passwd "\${SUDO_USER:-\$USER}")
+export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}")
 export ARMORY_FORGE="\${USER_HOME}/forge/packages/kael-kernel-armory"
 export KERNEL_SOURCE_CACHE="\${ARMORY_FORGE}/source_cache"
 export LOCAL_REPO_PATH="\${USER_HOME}/forge/repo"
@@ -44,15 +45,15 @@ else
 fi
 
 # DYNAMIC NAMING
-_basever=$(grep "^pkgver=" "\${KERNEL_SOURCE_CACHE}/\${KERNEL_BASE}/PKGBUILD" | cut -d'=' -f2 | sed -e 's|\\.arch.*||' -e 's|\\.lts.*||' -e 's|\\.zen.*||')
-_pkg_suffix=\${TARGET_ARCH//x86-64-/}
+_basever=\$(grep "^pkgver=" "\${KERNEL_SOURCE_CACHE}/\${KERNEL_BASE}/PKGBUILD" | cut -d'=' -f2 | sed -e 's|\\.arch.*||' -e 's|\\.lts.*||' -e 's|\\.zen.*||')
+_pkg_suffix=\$(echo "\${TARGET_ARCH}" | sed 's/x86-64-//')
 if [ "\${KERNEL_BASE}" == "linux" ]; then
     export PKG_NAME="kaelic-kernel-\${_basever}-\${_pkg_suffix}"
 else
-    _base_suffix=\${KERNEL_BASE//linux-/}
+    _base_suffix=\$(echo "\${KERNEL_BASE}" | sed 's/linux-//')
     export PKG_NAME="kaelic-kernel-\${_basever}-\${_base_suffix}-\${_pkg_suffix}"
 fi
-export PKG_NAME_SANITIZED=\${PKG_NAME//-/_}
+export PKG_NAME_SANITIZED=\$(echo "\${PKG_NAME}" | sed 's/-/_/g')
 export BUILD_DIR="\${ARMORY_FORGE}/\${PKG_NAME}"
 
 echo "    -> Scribing blueprint for \${PKG_NAME}..."
@@ -67,8 +68,8 @@ echo ""
 echo "--> [2/5] Attuning blueprint with The Phoenix Pact..."
 (
     # 1. Docs removal
-    perl -i -p0e 's/_package-docs\s*\(\)\s*\{[\s\S]*?\}//gm' PKGBUILD
-    perl -i -p0e "s/package_\${KERNEL_BASE}-docs\s*\(\)\s*\{[\s\S]*?\}//gm" PKGBUILD
+    perl -i -p0e 's/_package-docs\\s*\\(\\)\\s*\\{[\\s\\S]*?\\}//gm' PKGBUILD
+    perl -i -p0e "s/package_\${KERNEL_BASE}-docs\\s*\\(\\)\\s*\\{[\\s\\S]*?\\}//gm" PKGBUILD
     sed -i "s/['\\"]\${KERNEL_BASE}-docs['\\"]//g" PKGBUILD
 
     # 2. Rename pkgbase
@@ -76,16 +77,16 @@ echo "--> [2/5] Attuning blueprint with The Phoenix Pact..."
 
     # 3. Atomically modify main package function
     perl -i -p0e '
-        my $pkg_name_sanitized = "'"\${PKG_NAME_SANITIZED}"'";
-        my $base = "'"\${KERNEL_BASE}"'";
-        s/(package_)\Q\${base}\E(\(\)\s*\{)([\s\S]*?)(^\})/$1 . $pkg_name_sanitized . $2 . "  provides=(\x27\${base}\x27)\\n  conflicts=(\x27\${base}\x27)\\n  replaces=(\x27\${base}\x27)\\n" . do { my $s = $3; $s =~ s!^[ \t]*(provides|conflicts|replaces)=\([\s\S]*?\)!!gm; $s } . $4/gem;
+        my \\$pkg_name_sanitized = "'"\${PKG_NAME_SANITIZED}"'";
+        my \\$base = "'"\${KERNEL_BASE}"'";
+        s/(package_)\\Q\${base}\\E(\\(\\)\\s*\\{)([\\s\\S]*?)(^\\})/\\$1 . \\$pkg_name_sanitized . \\$2 . "  provides=(\\x27\${base}\\x27)\\n  conflicts=(\\x27\${base}\\x27)\\n  replaces=(\\x27\${base}\\x27)\\n" . do { my \\$s = \\$3; \\$s =~ s!^[ \t]*(provides|conflicts|replaces)=\\([\\s\\S]*?\\)!!gm; \\$s } . \\$4/gem;
     ' PKGBUILD
     
     # 4. Atomically modify headers package function
     perl -i -p0e '
-        my $pkg_name_sanitized = "'"\${PKG_NAME_SANITIZED}"'";
-        my $base = "'"\${KERNEL_BASE}"'";
-        s/(package_)\Q\${base}\E-headers(\(\)\s*\{)([\s\S]*?)(^\})/$1 . $pkg_name_sanitized . "-headers" . $2 . "  provides=(\x27\${base}-headers\x27)\\n  conflicts=(\x27\${base}-headers\x27)\\n  replaces=(\x27\${base}-headers\x27)\\n" . do { my $s = $3; $s =~ s!^[ \t]*(provides|conflicts|replaces)=\([\s\S]*?\)!!gm; $s } . $4/gem;
+        my \\$pkg_name_sanitized = "'"\${PKG_NAME_SANITIZED}"'";
+        my \\$base = "'"\${KERNEL_BASE}"'";
+        s/(package_)\\Q\${base}\\E-headers(\\(\\)\\s*\\{)([\\s\\S]*?)(^\\})/\\$1 . \\$pkg_name_sanitized . "-headers" . \\$2 . "  provides=(\\x27\${base}-headers\\x27)\\n  conflicts=(\\x27\${base}-headers\\x27)\\n  replaces=(\\x27\${base}-headers\\x27)\\n" . do { my \\$s = \\$3; \\$s =~ s!^[ \t]*(provides|conflicts|replaces)=\\([\\s\\S]*?\\)!!gm; \\$s } . \\$4/gem;
     ' PKGBUILD
 
     # 5. Inject compiler flags
@@ -146,7 +147,7 @@ export const IndividualKernelForgeModal: React.FC<IndividualKernelForgeModalProp
                         <span>The Single Forge (Dragon's Breath v19)</span>
                     </h2>
                     <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">
-                        <CloseIcon className="w-5 h-5" />
+                        <CloseIcon className="w-6 h-6" />
                     </button>
                 </header>
 

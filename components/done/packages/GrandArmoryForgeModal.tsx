@@ -133,8 +133,18 @@ for base in \${KERNEL_BASES}; do
             sed -i "s/^pkgbase=.*/pkgbase='\${_pkg_name}'/" PKGBUILD
 
             # 3. Inject provides/conflicts/replaces (The Adamant Pact)
-            INSERT_LOGIC="if [[ \\"\\$_p\\" == *\\"headers\\"* ]]; then _provides=\\"\${base}-headers\\"; else _provides=\\"\${base}\\"; fi; provides=(\\"\\$_provides\\"); conflicts=(\\"\\$_provides\\"); replaces=(\\"\\$_provides\\");"
-            sed -i "/eval \\"package_\\$_p() {/a \${INSERT_LOGIC}" PKGBUILD
+            # FIX: Replaced faulty sed with robust perl commands to atomically modify package functions.
+            perl -i -p0e '
+                my \\$pkg_name = "'"\${_pkg_name}"'";
+                my \\$base_name = "'"\${base}"'";
+                s/(package_)\\Q\$base_name\\E(\\(\\)\\s*\\{)([\\s\\S]*?)(^\\})/\\$1 . \\$pkg_name . \\$2 . "  provides=(\\x27\$base_name\\x27)\\n  conflicts=(\\x27\$base_name\\x27)\\n  replaces=(\\x27\$base_name\\x27)\\n" . do { my \\$s = \\$3; \\$s =~ s!^[ \t]*(provides|conflicts|replaces)=\\([\\s\\S]*?\\)!!gm; \\$s } . \\$4/gem;
+            ' PKGBUILD
+            
+            perl -i -p0e '
+                my \\$pkg_name = "'"\${_pkg_name}"'";
+                my \\$base_name = "'"\${base}"'";
+                s/(package_)\\Q\$base_name\\E-headers(\\(\\)\\s*\\{)([\\s\\S]*?)(^\\})/\\$1 . \\$pkg_name . "-headers" . \\$2 . "  provides=(\\x27\$base_name-headers\\x27)\\n  conflicts=(\\x27\$base_name-headers\\x27)\\n  replaces=(\\x27\$base_name-headers\\x27)\\n" . do { my \\$s = \\$3; \\$s =~ s!^[ \t]*(provides|conflicts|replaces)=\\([\\s\\S]*?\\)!!gm; \\$s } . \\$4/gem;
+            ' PKGBUILD
 
             # 4. Inject compiler flags
             sed -i "/^build() {/a \\
@@ -304,7 +314,7 @@ if [ -n "\$MOUNT_ROOT" ] && [ -d "\$MOUNT_ROOT" ]; then
             if [ -f "\$db_file" ]; then mv "\$db_file" "\${db_file/kael-os-local/kael-os-repo}"; fi
         done
         for files_file in kael-os-local.files*; do
-            if [ -f "\$files_file" ]; then mv "\${files_file/kael-os-local/kael-os-repo}"; fi
+            if [ -f "\$files_file" ]; then mv "\$files_file" "\${files_file/kael-os-local/kael-os-repo}"; fi
         done
     )
     echo "✅ WebDisk Athenaeum synchronized."
@@ -340,14 +350,14 @@ export const GrandArmoryForgeModal: React.FC<GrandArmoryForgeModalProps> = ({ on
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
-            <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-4xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-4xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={onClose}>
                 <header className="flex justify-between items-center mb-4 flex-shrink-0">
                      <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
                         <CpuChipIcon className="w-5 h-5 text-dragon-fire" />
                         <span>The Dragon's Breath Forge (v32 - The Solid Ground Pact)</span>
                     </h2>
                     <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">
-                        <CloseIcon className="w-5 h-5" />
+                        <CloseIcon className="w-6 h-6" />
                     </button>
                 </header>
                 

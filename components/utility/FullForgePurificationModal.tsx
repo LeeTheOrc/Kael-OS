@@ -18,19 +18,19 @@ echo ""
 # Use /dev/tty to ensure we get user input even if piped
 read -p "Are you absolutely sure you want to continue? (y/N) " -n 1 -r < /dev/tty
 echo ""
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+if [[ ! \$REPLY =~ ^[Yy]$ ]]; then
     echo "Purification aborted."
     exit 1
 fi
 
-if [ "$EUID" -ne 0 ]; then
+if [ "\$EUID" -ne 0 ]; then
   echo "❌ This script must be run with sudo." >&2
   exit 1
 fi
 
 # Get the original user who ran sudo
-THE_USER="\${SUDO_USER:-$USER}"
-USER_HOME=$(getent passwd "$THE_USER" | cut -d: -f6)
+THE_USER="\${SUDO_USER:-\$USER}"
+USER_HOME=\$(getent passwd "\$THE_USER" | cut -d: -f6)
 
 echo "--> [1/9] Unmounting and disabling services..."
 # Unmount first to release files
@@ -38,10 +38,10 @@ umount -l "\${USER_HOME}/WebDisk" &>/dev/null || true
 umount -l "/var/lib/kael-local-repo" &>/dev/null || true
 
 # Disable systemd units - dynamically find the escaped path
-WEB_DISK_UNIT=$(systemd-escape -p --suffix=automount "\${USER_HOME}/WebDisk")
-LOCAL_REPO_UNIT=$(systemd-escape -p --suffix=automount "/var/lib/kael-local-repo")
-systemctl disable --now "$WEB_DISK_UNIT" &>/dev/null || true
-systemctl disable --now "$LOCAL_REPO_UNIT" &>/dev/null || true
+WEB_DISK_UNIT=\$(systemd-escape -p --suffix=automount "\${USER_HOME}/WebDisk")
+LOCAL_REPO_UNIT=\$(systemd-escape -p --suffix=automount "/var/lib/kael-local-repo")
+systemctl disable --now "\$WEB_DISK_UNIT" &>/dev/null || true
+systemctl disable --now "\$LOCAL_REPO_UNIT" &>/dev/null || true
 systemctl daemon-reload
 echo "✅ Services disabled."
 
@@ -73,19 +73,19 @@ sed -i '/ignore_dav_header 1/d' /etc/davfs2/davfs2.conf &>/dev/null || true
 echo "✅ System configs restored."
 
 echo "--> [4/9] Removing systemd unit files..."
-rm -f /etc/systemd/system/$WEB_DISK_UNIT /etc/systemd/system/\${WEB_DISK_UNIT%.automount}.mount
-rm -f /etc/systemd/system/$LOCAL_REPO_UNIT /etc/systemd/system/\${LOCAL_REPO_UNIT%.automount}.mount
+rm -f /etc/systemd/system/\$WEB_DISK_UNIT /etc/systemd/system/\${WEB_DISK_UNIT%.automount}.mount
+rm -f /etc/systemd/system/\$LOCAL_REPO_UNIT /etc/systemd/system/\${LOCAL_REPO_UNIT%.automount}.mount
 systemctl daemon-reload
 echo "✅ Systemd units removed."
 
 echo "--> [5/9] Removing user directories..."
 # Run as the original user to handle permissions correctly
-sudo -u "$THE_USER" rm -rf "\${USER_HOME}/forge"
-sudo -u "$THE_USER" rm -rf "\${USER_HOME}/WebDisk"
-sudo -u "$THE_USER" rm -rf "\${USER_HOME}/.config/kael"
-sudo -u "$THE_USER" rm -f "\${USER_HOME}/.kael_history"
-sudo -u "$THE_USER" rm -rf "\${USER_HOME}/ChroniclesReports"
-sudo -u "$THE_USER" rm -rf "\${USER_HOME}/.local/share/chronicler"
+sudo -u "\$THE_USER" rm -rf "\${USER_HOME}/forge"
+sudo -u "\$THE_USER" rm -rf "\${USER_HOME}/WebDisk"
+sudo -u "\$THE_USER" rm -rf "\${USER_HOME}/.config/kael"
+sudo -u "\$THE_USER" rm -f "\${USER_HOME}/.kael_history"
+sudo -u "\$THE_USER" rm -rf "\${USER_HOME}/ChroniclesReports"
+sudo -u "\$THE_USER" rm -rf "\${USER_HOME}/.local/share/chronicler"
 echo "✅ User directories purged."
 
 echo "--> [6/9] Removing installed binaries..."
@@ -99,16 +99,16 @@ echo "✅ Shell configs cleaned."
 
 echo "--> [8/9] Untrusting GPG keys from pacman keyring..."
 # Find the Architect's key
-ARCHITECT_KEY=$(sudo -u "$THE_USER" gpg --list-secret-keys --with-colons | awk -F: '/^sec/{print $5; exit}')
-if [ -n "$ARCHITECT_KEY" ]; then
-    pacman-key --delete "$ARCHITECT_KEY" &>/dev/null || true
-    echo "    -> Removed Architect key ($ARCHITECT_KEY) from pacman keyring."
+ARCHITECT_KEY=\$(sudo -u "\$THE_USER" gpg --list-secret-keys --with-colons | awk -F: '/^sec/{print \$5; exit}')
+if [ -n "\$ARCHITECT_KEY" ]; then
+    pacman-key --delete "\$ARCHITECT_KEY" &>/dev/null || true
+    echo "    -> Removed Architect key (\$ARCHITECT_KEY) from pacman keyring."
 fi
 # Find Kael's key
-KAEL_KEY_FINGERPRINT=$(pacman-key -l | grep -B 1 "LeeTheOrc" | head -n 1 | awk '{print $1}')
-if [ -n "$KAEL_KEY_FINGERPRINT" ]; then
-    pacman-key --delete "$KAEL_KEY_FINGERPRINT" &>/dev/null || true
-    echo "    -> Removed Kael key ($KAEL_KEY_FINGERPRINT) from pacman keyring."
+KAEL_KEY_FINGERPRINT=\$(pacman-key -l | grep -B 1 "LeeTheOrc" | head -n 1 | awk '{print \$1}')
+if [ -n "\$KAEL_KEY_FINGERPRINT" ]; then
+    pacman-key --delete "\$KAEL_KEY_FINGERPRINT" &>/dev/null || true
+    echo "    -> Removed Kael key (\$KAEL_KEY_FINGERPRINT) from pacman keyring."
 fi
 echo "✅ GPG keys untrusted."
 

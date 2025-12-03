@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CloseIcon, BookOpenIcon } from '../../core/Icons';
+import { CloseIcon, BookOpenIcon, ServerIcon } from '../../core/Icons';
 import { CodeBlock } from '../../core/CodeBlock';
 
 interface AthenaeumScribeModalProps {
@@ -22,31 +22,31 @@ fi
 echo "--- Grand Concordance Ritual 0.00.11 (The True Name Pact) ---"
 
 # --- [1/7] ENVIRONMENT DETECTION ---
-USER_HOME=\$(getent passwd "\\\${SUDO_USER:-\$USER}" | cut -d: -f6)
+USER_HOME=$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
 
-if [ -d "\\$USER_HOME/host_forge" ]; then
+if [ -d "\$USER_HOME/host_forge" ]; then
     echo "--> 🔮 VM Environment Detected."
-    LOCAL_REPO_PATH="\\$USER_HOME/host_forge/repo"
-    MOUNT_ROOT="\\$USER_HOME/host_webdisk"
-    LOCAL_WEBDISK_REPO="\\$MOUNT_ROOT/repo"
+    LOCAL_REPO_PATH="\$USER_HOME/host_forge/repo"
+    MOUNT_ROOT="\$USER_HOME/host_webdisk"
+    LOCAL_WEBDISK_REPO="\$MOUNT_ROOT/repo"
 else
     echo "--> 🖥️  Host Environment Detected."
-    LOCAL_REPO_PATH="\\$USER_HOME/forge/repo"
-    MOUNT_ROOT="\\$USER_HOME/WebDisk"
-    LOCAL_WEBDISK_REPO="\\$MOUNT_ROOT/repo"
+    LOCAL_REPO_PATH="\$USER_HOME/forge/repo"
+    MOUNT_ROOT="\$USER_HOME/WebDisk"
+    LOCAL_WEBDISK_REPO="\$MOUNT_ROOT/repo"
 fi
 echo ""
 
 # --- [2/7] PREPARATION ---
 TEMP_GH_DIR=""
 cleanup() {
-    [[ -n "\\$TEMP_GH_DIR" && -d "\\$TEMP_GH_DIR" ]] && rm -rf -- "\\$TEMP_GH_DIR"
+    [[ -n "\$TEMP_GH_DIR" && -d "\$TEMP_GH_DIR" ]] && rm -rf -- "\$TEMP_GH_DIR"
 }
 trap cleanup EXIT SIGINT SIGTERM
 
 # --- [3/7] WAKING THE GPG AGENT ---
 echo "--> [3/7] Waking the GPG Agent..."
-export GPG_TTY=\$(tty <&1)
+export GPG_TTY=$(tty <&1)
 gpg-connect-agent updatestartuptty /bye >/dev/null || true
 if ! echo "test" | gpg --clearsign >/dev/null 2>&1; then
     echo "⚠️  GPG test signature failed. Please run the 'GPG Key Awakening' ritual if this fails."
@@ -72,16 +72,16 @@ if [ \${#PKG_PATHS[@]} -eq 0 ]; then
 fi
 
 echo "✅ Discovered artifacts:"
-for pkg in "\\\${PKG_PATHS[@]}"; do
-    echo "   - \\\$(basename "\\\$pkg")"
+for pkg in "\${PKG_PATHS[@]}"; do
+    echo "   - \$(basename "\$pkg")"
 done
 echo ""
 
 # --- [5/7] SIGNING ARTIFACTS ---
 echo "--> [5/7] Signing all discovered artifacts..."
-for pkg_path in "\\\${PKG_PATHS[@]}"; do
-    if ! gpg --yes --detach-sign --no-armor "\\\$pkg_path"; then
-        echo "❌ ERROR: GPG failed to sign '\\\$pkg_path'." >&2
+for pkg_path in "\${PKG_PATHS[@]}"; do
+    if ! gpg --yes --detach-sign --no-armor "\$pkg_path"; then
+        echo "❌ ERROR: GPG failed to sign '\$pkg_path'." >&2
         exit 1
     fi
 done
@@ -93,17 +93,17 @@ echo ""
 echo "--> [6/7] Publishing to all Athenaeums..."
 
 # LOCAL ATHENAEUM
-if [ ! -d "\\$LOCAL_REPO_PATH" ]; then mkdir -p "\\$LOCAL_REPO_PATH"; fi
+if [ ! -d "\$LOCAL_REPO_PATH" ]; then mkdir -p "\$LOCAL_REPO_PATH"; fi
 
-for pkg_path in "\\\${PKG_PATHS[@]}"; do
-    pkg_basename=\$(basename "\\\$pkg_path")
-    pkg_name_for_purge=\$(echo "\\\$pkg_basename" | sed -E 's/-[0-9].*//')
-    find "\\$LOCAL_REPO_PATH" -maxdepth 1 -name "\\\${pkg_name_for_purge}*.pkg.tar.zst*" -delete
-    cp "\\\$pkg_path" "\\\${pkg_path}.sig" "\\$LOCAL_REPO_PATH/"
+for pkg_path in "\${PKG_PATHS[@]}"; do
+    pkg_basename=\$(basename "\$pkg_path")
+    pkg_name_for_purge=\$(echo "\$pkg_basename" | sed -E 's/-[0-9].*//')
+    find "\$LOCAL_REPO_PATH" -maxdepth 1 -name "\${pkg_name_for_purge}*.pkg.tar.zst*" -delete
+    cp "\$pkg_path" "\${pkg_path}.sig" "\$LOCAL_REPO_PATH/"
 done
 
 (
-    cd "\\$LOCAL_REPO_PATH"
+    cd "\$LOCAL_REPO_PATH"
     echo "    -> Scribing artifact(s) into the local database (kael-os-local.db)..."
     repo-add --sign --remove "kael-os-local.db.tar.gz" ./*.pkg.tar.zst
 )
@@ -112,17 +112,17 @@ echo "    -> ✅ Published to Local Athenaeum."
 # GITHUB ATHENAEUM
 if command -v gh &>/dev/null && gh auth status &>/dev/null; then
     TEMP_GH_DIR=\$(mktemp -d)
-    git clone --branch=gh-pages --single-branch "https://github.com/LeeTheOrc/kael-os-repo.git" "\\$TEMP_GH_DIR"
+    git clone --branch=gh-pages --single-branch "https://github.com/LeeTheOrc/kael-os-repo.git" "\$TEMP_GH_DIR"
     
-    for pkg_path in "\\\${PKG_PATHS[@]}"; do
-        pkg_basename=\$(basename "\\\$pkg_path")
-        pkg_name_for_purge=\$(echo "\\\$pkg_basename" | sed -E 's/-[0-9].*//')
-        find "\\$TEMP_GH_DIR" -maxdepth 1 -name "\\\${pkg_name_for_purge}*.pkg.tar.zst*" -delete
-        cp "\\$LOCAL_REPO_PATH/\\\$pkg_basename" "\\$LOCAL_REPO_PATH/\\\${pkg_basename}.sig" "\\$TEMP_GH_DIR/"
+    for pkg_path in "\${PKG_PATHS[@]}"; do
+        pkg_basename=\$(basename "\$pkg_path")
+        pkg_name_for_purge=\$(echo "\$pkg_basename" | sed -E 's/-[0-9].*//')
+        find "\$TEMP_GH_DIR" -maxdepth 1 -name "\${pkg_name_for_purge}*.pkg.tar.zst*" -delete
+        cp "\$LOCAL_REPO_PATH/\$pkg_basename" "\$LOCAL_REPO_PATH/\${pkg_basename}.sig" "\$TEMP_GH_DIR/"
     done
 
     (
-        cd "\\$TEMP_GH_DIR"
+        cd "\$TEMP_GH_DIR"
         # THE TRUE NAME PACT: Use the correct database name
         repo-add --sign --remove ./kael-os-repo.db.tar.gz ./*.pkg.tar.zst
         
@@ -132,29 +132,29 @@ if command -v gh &>/dev/null && gh auth status &>/dev/null; then
         if git diff-index --quiet HEAD --; then
              echo "    -> No changes to commit to GitHub."
         else
-             PRIMARY_PKG_NAME=\$(basename "\\\${PKG_PATHS[0]}" | sed -E 's/-[0-9].*//')
-             git commit -m "chore(sync): publish \\\${PRIMARY_PKG_NAME} artifacts"
+             PRIMARY_PKG_NAME=\$(basename "\${PKG_PATHS[0]}" | sed -E 's/-[0-9].*//')
+             git commit -m "chore(sync): publish \${PRIMARY_PKG_NAME} artifacts"
              git push
         fi
     )
-    rm -rf "\\$TEMP_GH_DIR"
+    rm -rf "\$TEMP_GH_DIR"
     echo "    -> ✅ Published to GitHub Athenaeum."
 else
     echo "    -> ⚠️ Not authenticated with 'gh'. Skipping GitHub."
 fi
 
 # WEBDISK ATHENAEUM
-if [ -d "\\$MOUNT_ROOT" ]; then
-    mkdir -p "\\$LOCAL_WEBDISK_REPO"
-    rsync -rtv --delete --copy-links --no-owner --no-group "\\$LOCAL_REPO_PATH/" "\\$LOCAL_WEBDISK_REPO/"
+if [ -d "\$MOUNT_ROOT" ]; then
+    mkdir -p "\$LOCAL_WEBDISK_REPO"
+    rsync -rtv --delete --copy-links --no-owner --no-group "\$LOCAL_REPO_PATH/" "\$LOCAL_WEBDISK_REPO/"
     (
-        cd "\\$LOCAL_WEBDISK_REPO"
+        cd "\$LOCAL_WEBDISK_REPO"
         # THE TRUE NAME PACT: Use the correct database name
         for db_file in kael-os-local.db*; do
-            if [ -f "\\\$db_file" ]; then mv "\\\$db_file" "\\\${db_file/kael-os-local/kael-os-repo}"; fi
+            if [ -f "\$db_file" ]; then mv "\$db_file" "\${db_file/kael-os-local/kael-os-repo}"; fi
         done
         for files_file in kael-os-local.files*; do
-            if [ -f "\\\$files_file" ]; then mv "\\\$files_file" "\\\${files_file/kael-os-local/kael-os-repo}"; fi
+            if [ -f "\$files_file" ]; then mv "\$files_file" "\${files_file/kael-os-local/kael-os-repo}"; fi
         done
     )
     echo "    -> ✅ Published to WebDisk Athenaeum."
