@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { CloseIcon, ComputerDesktopIcon } from './core/Icons';
 import { CodeBlock } from './core/CodeBlock';
@@ -7,7 +8,7 @@ interface ForgeSetupModalProps {
   onClose: () => void;
 }
 
-const FORGE_SETUP_SCRIPT_RAW = `#!/bin/bash
+const FORGE_SETUP_SCRIPT_RAW = String.raw`#!/bin/bash
 set -euo pipefail
 
 echo "--- Local Forge Setup Ritual ---"
@@ -39,11 +40,11 @@ echo ""
 
 # --- [3/4] Directory Structure ---
 USER_HOME=$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
-FORGE_BASE="\$USER_HOME/forge"
+FORGE_BASE="\${USER_HOME}/forge"
 echo "--> [3/4] Forging the directory structure at \${FORGE_BASE}..."
-mkdir -p "\$FORGE_BASE/kael"
-mkdir -p "\$FORGE_BASE/repo"
-mkdir -p "\$FORGE_BASE/packages"
+mkdir -p "\${FORGE_BASE}/kael"
+mkdir -p "\${FORGE_BASE}/repo"
+mkdir -p "\${FORGE_BASE}/packages"
 echo "✅ Forge structure created:"
 echo "    - \${FORGE_BASE}/kael (Project Source)"
 echo "    - \${FORGE_BASE}/repo (Local Athenaeum/Pacman Repo)"
@@ -54,22 +55,22 @@ echo ""
 echo "--> [4/4] Summoning the sacred texts from the cloud..."
 
 # Clone Kael-OS project
-if [ -d "\$FORGE_BASE/kael/.git" ]; then
+if [ -d "\${FORGE_BASE}/kael/.git" ]; then
     echo "    -> Kael-OS project already exists. Skipping clone."
 else
     echo "    -> Cloning Kael-OS project into \${FORGE_BASE}/kael..."
-    git clone https://github.com/LeeTheOrc/Kael-OS.git "\$FORGE_BASE/kael"
+    git clone https://github.com/LeeTheOrc/Kael-OS.git "\${FORGE_BASE}/kael"
 fi
 
 # Clone kael-os-repo to get PKGBUILDs
-TEMP_REPO_DIR=\$(mktemp -d)
-trap 'rm -rf -- "\$TEMP_REPO_DIR"' EXIT
+TEMP_REPO_DIR=$(mktemp -d)
+trap 'rm -rf -- "$TEMP_REPO_DIR"' EXIT
 echo "    -> Cloning Athenaeum sources to a temporary location..."
-git clone https://github.com/LeeTheOrc/kael-os-repo.git "\$TEMP_REPO_DIR"
+git clone https://github.com/LeeTheOrc/kael-os-repo.git "$TEMP_REPO_DIR"
 
 echo "    -> Organizing PKGBUILD recipes into \${FORGE_BASE}/packages..."
 # Use find to copy all PKGBUILD directories into the packages folder
-find "\$TEMP_REPO_DIR" -mindepth 1 -maxdepth 1 -type d ! -name '.git' -exec cp -r {} "\$FORGE_BASE/packages/" \\;
+find "$TEMP_REPO_DIR" -mindepth 1 -maxdepth 1 -type d ! -name '.git' -exec cp -r {} "\${FORGE_BASE}/packages/" \\;
 
 echo ""
 echo "✨ Ritual Complete! Your local forge is now set up and ready."
@@ -77,9 +78,6 @@ echo "Your next step is to run the 'Install Forge Dependencies' ritual."
 `;
 
 export const ForgeSetupModal: React.FC<ForgeSetupModalProps> = ({ onClose }) => {
-    const encodedScript = btoa(unescape(encodeURIComponent(FORGE_SETUP_SCRIPT_RAW)));
-    const finalCommand = `echo "${encodedScript}" | base64 --decode | bash`;
-
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
             <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-3xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
@@ -106,9 +104,9 @@ export const ForgeSetupModal: React.FC<ForgeSetupModalProps> = ({ onClose }) => 
                     </ul>
                     <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">The Forging Incantation</h3>
                     <p>
-                        Run this single command in your terminal. It will perform all the necessary setup steps.
+                        Copy and run this entire script in your terminal. It will perform all the necessary setup steps.
                     </p>
-                    <CodeBlock lang="bash">{finalCommand}</CodeBlock>
+                    <CodeBlock lang="bash">{FORGE_SETUP_SCRIPT_RAW}</CodeBlock>
                 </div>
             </div>
         </div>

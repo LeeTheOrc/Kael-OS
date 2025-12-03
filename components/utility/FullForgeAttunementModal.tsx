@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CloseIcon, HammerIcon } from '../core/Icons';
 import { CodeBlock } from '../core/CodeBlock';
@@ -72,9 +71,9 @@ if ! sudo pacman-key --list-keys "LeeTheOrc" >/dev/null 2>&1; then
     KEY_URL="https://raw.githubusercontent.com/LeeTheOrc/kael-os-repo/gh-pages/kael-os.asc"
     TEMP_KAEL_KEY_FILE=\$(mktemp)
     trap 'rm -f -- "\$TEMP_KAEL_KEY_FILE"' EXIT
-    curl -fsSL "\$KEY_URL" -o "\$TEMP_KAEL_KEY_FILE"
-    KAEL_KEY_ID=\$(gpg --show-keys --with-colons "\$TEMP_KAEL_KEY_FILE" 2>/dev/null | grep '^pub' | cut -d: -f5)
-    sudo pacman-key --add "\$TEMP_KAEL_KEY_FILE"
+    curl -fsSL "\${KEY_URL}" -o "\${TEMP_KAEL_KEY_FILE}"
+    KAEL_KEY_ID=\$(gpg --show-keys --with-colons "\${TEMP_KAEL_KEY_FILE}" 2>/dev/null | grep '^pub' | cut -d: -f5)
+    sudo pacman-key --add "\${TEMP_KAEL_KEY_FILE}"
     sudo pacman-key --lsign-key "\$KAEL_KEY_ID"
 fi
 echo "✅ Kael OS Master Key is trusted."
@@ -115,9 +114,6 @@ echo "✨ Grand Attunement Complete! Your forge is ready for any quest."
 `;
 
 export const FullForgeAttunementModal: React.FC<FullForgeAttunementModalProps> = ({ onClose }) => {
-    const encodedScript = btoa(unescape(encodeURIComponent(ATTUNEMENT_SCRIPT_RAW)));
-    const finalCommand = `echo "${encodedScript}" | base64 --decode | bash`;
-
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
             <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-3xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
@@ -146,9 +142,9 @@ export const FullForgeAttunementModal: React.FC<FullForgeAttunementModalProps> =
 
                     <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">The Unified Incantation</h3>
                     <p>
-                        Run this single command to fully attune your system.
+                        Copy and run this entire script to fully attune your system.
                     </p>
-                    <CodeBlock lang="bash">{finalCommand}</CodeBlock>
+                    <CodeBlock lang="bash">{ATTUNEMENT_SCRIPT_RAW}</CodeBlock>
                 </div>
             </div>
         </div>

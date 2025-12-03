@@ -1,209 +1,231 @@
 
+
 import React from 'react';
-import { CloseIcon, ArrowDownTrayIcon, HammerIcon, ShieldCheckIcon } from '../core/Icons';
+import { CloseIcon, ArrowDownTrayIcon } from '../core/Icons';
 import { CodeBlock } from '../core/CodeBlock';
 
 interface ForgeReconciliationModalProps {
   onClose: () => void;
 }
 
-// --- SPELL 1: REPAIR & SYNC ---
-const REPAIR_SCRIPT_RAW = `#!/bin/bash
+const UNIFIED_SCRIPT_RAW = `#!/bin/bash
 set -euo pipefail
 
-# --- Global Configuration ---
-USER_HOME=$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
+echo "--- Grand Forge Attunement Ritual (Unified v1.7 - The True Path) ---"
+echo "This unified ritual performs all critical one-time setup tasks for the forge."
+
+# --- CONFIGURATION & GLOBAL VARS ---
+USER_HOME=\$(getent passwd "\\\${SUDO_USER:-\$USER}" | cut -d: -f6)
 LOCAL_REPO_PATH="\$USER_HOME/forge/repo"
-# The exact deep URL for the WebDisk Athenaeum
-WEBDISK_URL="https://leroyonline.co.za/leroyonline.co.za/leroy/forge/repo/"
-MOUNT_POINT="\$USER_HOME/WebDisk"
-
-echo "--- [Spell I] The Mending (Repair & Sync) ---"
-echo "Target: \$LOCAL_REPO_PATH"
-
-# --- [0/5] WebDisk Anomaly Check (Void Banishing) ---
-if [ -d "\$MOUNT_POINT/forge" ]; then
-    echo "--> ⚠️  Anomaly Detected: Recursive 'forge' folder in WebDisk."
-    echo "    Invoking Void Banishing Protocol..."
-    TRASH_NAME="_TRASH_forge_\$(date +%s)"
-    mv "\$MOUNT_POINT/forge" "\$MOUNT_POINT/\$TRASH_NAME" || true
-    ( rm -rf "\$MOUNT_POINT/\$TRASH_NAME" ) &>/dev/null &
-    echo "    ✅ Anomaly banished."
-fi
-
-# --- [1/5] Local Athenaeum Repair ---
-echo ""
-echo "--> [1/5] Repairing Local Athenaeum Structure..."
-if [ ! -d "\$LOCAL_REPO_PATH" ]; then
-    echo "❌ ERROR: Local repo directory not found."
-    echo "   Run 'Setup Local Forge' first."
-    exit 1
-fi
-
-# 1. Permissions
-find "\$LOCAL_REPO_PATH" -type d -exec chmod 755 {} +
-find "\$LOCAL_REPO_PATH" -type f -exec chmod 644 {} +
-chmod 755 "\$USER_HOME/forge"
-
-# 2. Database Integrity
-echo "    -> Verifying database signature..."
-cd "\$LOCAL_REPO_PATH"
-DB_ARCHIVE="kael-os-local.db.tar.gz"
-
-if [ -f "\$DB_ARCHIVE" ]; then
-    if [ ! -f "\$DB_ARCHIVE.sig" ]; then
-         echo "       ⚠️  Signature missing. Signing database..."
-         gpg --detach-sign --yes "\$DB_ARCHIVE" || echo "       ❌ Failed to sign."
-    fi
-    
-    # Repair Symlinks
-    ln -sf "\$DB_ARCHIVE" "kael-os-local.db"
-    [ -f "\$DB_ARCHIVE.sig" ] && ln -sf "\$DB_ARCHIVE.sig" "kael-os-local.db.sig"
-    
-    if [ -f "kael-os-local.files.tar.gz" ]; then
-        ln -sf "kael-os-local.files.tar.gz" "kael-os-local.files"
-        [ -f "kael-os-local.files.tar.gz.sig" ] && ln -sf "kael-os-local.files.tar.gz.sig" "kael-os-local.files.sig"
-    fi
-    echo "    ✅ Local integrity secure."
-else
-    echo "    ⚠️  No database found. Run 'Sanctify Athenaeum' to create one."
-fi
-
-# --- [2/5] Migration to Persistent Path ---
-echo ""
-echo "--> [2/5] Checking for Legacy Bind Mounts (Persistence Fix)..."
+SYSTEM_MOUNT_POINT="/var/lib/kael-local-repo"
 PACMAN_CONF="/etc/pacman.conf"
-BROKEN_PATH="/var/lib/kael-local-repo"
+TEMP_DIR=""
+TEMP_KEY_FILE=""
+TMP_CONFIG=""
 
-# Check if the config uses the old broken path
-if grep -q "\$BROKEN_PATH" "\$PACMAN_CONF"; then
-    echo "    ⚠️  Detected legacy volatile bind-mount path in pacman.conf."
-    echo "    -> Migrating config to persistent direct path..."
-    
-    # We use sed to replace the Server line under [kael-os-local]
-    # We match the Server line that contains the broken path
-    # And replace it with the new file:// path to HOME
-    NEW_SERVER="Server = file://\$LOCAL_REPO_PATH"
-    
-    # Escape slashes for sed
-    ESCAPED_NEW_SERVER=$(echo "\$NEW_SERVER" | sed 's/\\//\\\\\\//g')
-    
-    # Perform the surgery
-    sudo sed -i "s|Server = file://\$BROKEN_PATH/repo|\$ESCAPED_NEW_SERVER|g" "\$PACMAN_CONF"
-    
-    echo "    ✅ Config migrated to: \$NEW_SERVER"
-    
-    # Cleanup old broken mount
-    if mountpoint -q "\$BROKEN_PATH/repo"; then
-        sudo umount "\$BROKEN_PATH/repo"
-    fi
-    [ -d "\$BROKEN_PATH" ] && sudo rm -rf "\$BROKEN_PATH"
-    echo "    ✅ Cleaned up legacy /var/lib paths."
-else
-    echo "    ✅ Configuration uses valid persistent paths."
-fi
+# --- GLOBAL CLEANUP TRAP ---
+cleanup() {
+    [[ -n "\\$TEMP_DIR" && -d "\\$TEMP_DIR" ]] && rm -rf -- "\\$TEMP_DIR"
+    [[ -n "\\$TEMP_KEY_FILE" && -f "\\$TEMP_KEY_FILE" ]] && rm -f -- "\\$TEMP_KEY_FILE"
+    [[ -n "\\$TMP_CONFIG" && -f "\\$TMP_CONFIG" ]] && rm -f -- "\\$TMP_CONFIG"
+}
+trap cleanup EXIT SIGINT SIGTERM
 
-# --- [3/5] WebDisk Configuration Fix ---
+
+# ===================================================================
+# PART 1: THE BINDING RUNE (PERMANENT MOUNT SETUP)
+# ===================================================================
 echo ""
-echo "--> [3/5] Checking WebDisk Configuration..."
+echo "--- [PART 1/5] Scribing The Binding Rune (Permanent Mount)... ---"
 
-if grep -q "^\\[kael-os-webdisk\\]" "\$PACMAN_CONF"; then
-    if grep -q "leroy/forge/repo" "\$PACMAN_CONF"; then
-         echo "    ✅ WebDisk URL is correctly attuned."
-    else
-         echo "    ⚠️  WebDisk URL mismatch. Updating..."
-         ESCAPED_URL=$(echo "\$WEBDISK_URL" | sed 's/\\//\\\\\\//g')
-         sudo sed -i "/^\\[kael-os-webdisk\\]/,/^\\[/ s|Server = .*|Server = \$ESCAPED_URL|" "\$PACMAN_CONF"
-         echo "    ✅ WebDisk URL repaired."
-    fi
-else
-    WEBDISK_ENTRY="[kael-os-webdisk]\\nSigLevel = Required DatabaseOptional\\nServer = \$WEBDISK_URL"
-    printf "\\n%b\\n" "\$WEBDISK_ENTRY" | sudo tee -a "\$PACMAN_CONF" > /dev/null
-    echo "    ✅ WebDisk Athenaeum added."
-fi
+# Dynamically generate systemd unit names for correctness
+MOUNT_UNIT_NAME=\$(systemd-escape -p --suffix=mount "\\$SYSTEM_MOUNT_POINT")
+AUTOMOUNT_UNIT_NAME=\$(systemd-escape -p --suffix=automount "\\$SYSTEM_MOUNT_POINT")
+MOUNT_UNIT_FILE="/etc/systemd/system/\\$MOUNT_UNIT_NAME"
+AUTOMOUNT_UNIT_FILE="/etc/systemd/system/\\$AUTOMOUNT_UNIT_NAME"
 
-# --- [4/5] Synchronize Databases ---
-echo ""
-echo "--> [4/5] Synchronizing Pacman Databases..."
-
-# Clear sync cache for local repo to force refresh
-sudo rm -f /var/lib/pacman/sync/kael-os-local.db
-sudo rm -f /var/lib/pacman/sync/kael-os-local.db.sig
-
-if sudo pacman -Syy; then
-    echo "✅ Databases synchronized."
-else
-    echo "⚠️  Sync failed. Check your internet connection."
-fi
-
-echo ""
-echo "✨ Spell I Complete: System healed and persistent."
-`;
-
-// --- SPELL 2: INSTALL & VERIFY ---
-const INSTALL_SCRIPT_RAW = `#!/bin/bash
-set -euo pipefail
-
-USER_HOME=$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
-FORGE_BASE="\$USER_HOME/forge"
-
-echo "--- [Spell II] The Armament (Install & Verify) ---"
-
-# --- [1/3] Install Forge Tools ---
-echo ""
-echo "--> [1/3] Installing Forge Familiars..."
-
-CORE_PKGS="base-devel git pacman-contrib curl wget rsync openssh neovim tree unzip"
-NET_PKGS="lftp github-cli davfs2"
-SHELL_PKGS="zsh starship jq python zsh-autosuggestions zsh-syntax-highlighting"
-AI_PKGS="ollama"
-
-if sudo pacman -S --needed --noconfirm $CORE_PKGS $NET_PKGS $SHELL_PKGS $AI_PKGS; then
-    echo "    ✅ Standard Tools installed."
-else
-    echo "    ❌ Installation failed."
+if [ ! -d "\\$LOCAL_REPO_PATH" ]; then
+    echo "❌ ERROR: Local Athenaeum not found at '\\$LOCAL_REPO_PATH'." >&2
+    echo "   Please run 'Setup Local Forge' before this ritual." >&2
     exit 1
 fi
 
-# --- [2/3] Chronicler Verification ---
+echo "--> Cleaning up any previous failed configurations..."
+sudo systemctl disable --now kael-local-repo.automount &>/dev/null || true
+sudo systemctl disable --now kael-local-repo.mount &>/dev/null || true
+sudo rm -f /etc/systemd/system/kael-local-repo.automount /etc/systemd/system/kael-local-repo.mount
+
+# Scribe .mount unit
+MOUNT_UNIT_CONTENT="[Unit]
+Description=Kael OS Local Athenaeum Mount (\\\${USER_HOME})
+Requires=local-fs.target
+After=local-fs.target
+[Mount]
+What=\\\${LOCAL_REPO_PATH}
+Where=\\\${SYSTEM_MOUNT_POINT}
+Type=none
+Options=bind,ro
+[Install]
+WantedBy=multi-user.target"
+
+# Scribe .automount unit
+AUTOMOUNT_UNIT_CONTENT="[Unit]
+Description=Kael OS Local Athenaeum Automount
+[Automount]
+Where=\\\${SYSTEM_MOUNT_POINT}
+TimeoutIdleSec=600
+[Install]
+WantedBy=multi-user.target"
+
+echo "\\$MOUNT_UNIT_CONTENT" | sudo tee "\\$MOUNT_UNIT_FILE" > /dev/null
+echo "\\$AUTOMOUNT_UNIT_CONTENT" | sudo tee "\\$AUTOMOUNT_UNIT_FILE" > /dev/null
+echo "✅ Systemd runes scribed."
+
+
+# ===================================================================
+# PART 2: INSTALL CORE DEPENDENCIES & REPOSITORIES
+# ===================================================================
 echo ""
-echo "--> [2/3] Verifying Chronicler..."
-if pacman -Q chronicler &>/dev/null; then
-    echo "    ✅ 'chronicler' is active."
-else
-    echo "    -> Installing 'chronicler'..."
-    if sudo pacman -S --noconfirm chronicler; then
-        echo "    ✅ Installed."
-    else
-        echo "    ❌ Failed to install chronicler. Check repo connections."
-    fi
+echo "--- [PART 2/5] Installing Core Dependencies & Attuning Repositories... ---"
+echo "--> Installing bootstrap tools (base-devel, curl, git, pacman-contrib, lftp, github-cli)..."
+sudo pacman -S --needed --noconfirm base-devel curl git pacman-contrib lftp github-cli
+
+echo "--> Attuning to the CachyOS repository..."
+if ! pacman -Q cachyos-keyring > /dev/null 2>&1; then
+    TEMP_DIR=\$(mktemp -d)
+    (cd "\\$TEMP_DIR"; curl -fsSL "https://mirror.cachyos.org/cachyos-repo.tar.xz" -o "cachyos-repo.tar.xz"; tar xvf cachyos-repo.tar.xz > /dev/null; cd cachyos-repo && sudo ./cachyos-repo.sh)
 fi
 
-# --- [3/3] Environment Check ---
-echo ""
-echo "--> [3/3] Verifying Forge Structure..."
-mkdir -p "\$FORGE_BASE/kael" "\$FORGE_BASE/repo" "\$FORGE_BASE/packages" \
-         "\$FORGE_BASE/sources" "\$FORGE_BASE/build" "\$FORGE_BASE/artifacts" "\$FORGE_BASE/logs"
-echo "    ✅ Directory structure verified."
+echo "--> Attuning to the Chaotic-AUR..."
+if ! pacman -Q chaotic-keyring > /dev/null 2>&1; then
+    sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+    sudo pacman-key --lsign-key 3056513887B78AEB
+    sudo pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+    if ! grep -q "^\\[chaotic-aur\\]" /etc/pacman.conf; then
+      echo -e "\\n[chaotic-aur]\\nInclude = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf > /dev/null
+    fi
+fi
+echo "✅ Allied repositories attuned."
 
+
+# ===================================================================
+# PART 3: TRUST KAEL OS & CONFIGURE PACMAN.CONF
+# ===================================================================
 echo ""
-echo "✨ Spell II Complete: The Armament is secured."
+echo "--- [PART 3/5] Trusting Kael OS & Configuring pacman.conf... ---"
+
+# Trust Kael OS master key
+if ! sudo pacman-key --list-keys "LeeTheOrc" >/dev/null 2>&1; then
+    echo "--> Trusting Kael OS master key..."
+    KEY_URL="https://raw.githubusercontent.com/LeeTheOrc/kael-os-repo/gh-pages/kael-os.asc"
+    TEMP_KEY_FILE=\$(mktemp)
+    curl -fsSL "\\\${KEY_URL}" -o "\\\${TEMP_KEY_FILE}"
+    KAEL_KEY_ID=\$(gpg --show-keys --with-colons "\\\${TEMP_KEY_FILE}" 2>/dev/null | grep '^pub' | cut -d: -f5)
+    sudo pacman-key --add "\\\${TEMP_KEY_FILE}"
+    sudo pacman-key --lsign-key "\\\$KAEL_KEY_ID"
+fi
+echo "--> Kael OS master key is trusted."
+
+# Mirrorlist Creation
+echo "--> Scribing Unified Mirrorlist (/etc/pacman.d/kael-os-mirrorlist)..."
+cat <<EOF | sudo tee /etc/pacman.d/kael-os-mirrorlist > /dev/null
+# Kael OS Unified Mirrorlist (v1.7 - The True Path)
+# Primary: GitHub Pages (Fast, Global)
+Server = https://leetheorc.github.io/kael-os-repo/
+
+# Secondary: WebDisk (Redundant, Private)
+Server = https://leroyonline.co.za/leroy/forge/repo/
+EOF
+
+# Atomically update pacman.conf
+echo "--> Scribing all repository paths into pacman.conf..."
+BACKUP_FILE="/etc/pacman.conf.kael-attune.bak"
+if [ ! -f "\\$BACKUP_FILE" ]; then sudo cp "\\$PACMAN_CONF" "\\$BACKUP_FILE"; fi
+
+TMP_CONFIG=\$(mktemp)
+
+# A: Add local repo entry IF the DB exists.
+if [ -f "\\$LOCAL_REPO_PATH/kael-os-local.db" ] || [ -f "\\$LOCAL_REPO_PATH/kael-os-local.db.tar.gz" ]; then
+    echo "--> Sanctified local forge detected. Configuring permanent mount path..."
+    LOCAL_REPO_SERVER="file://\\$SYSTEM_MOUNT_POINT" # Use the permanent mount point
+    LOCAL_REPO_ENTRY="[kael-os-local]\\nSigLevel = Required DatabaseRequired\\nServer = \$LOCAL_REPO_SERVER"
+    printf "%b\\n\\n" "\$LOCAL_REPO_ENTRY" > "\$TMP_CONFIG"
+else
+    echo "--> No local forge database found. Using online-only mode."
+    > "\$TMP_CONFIG"
+fi
+
+# B: Filter old config and append it
+awk '
+    /^\\\[kael-os-local\\\]/ { in_section=1; next }
+    /^\\\[kael-os\\\]/       { in_section=1; next }
+    /^\\\[kael-os-webdisk\\\]/ { in_section=1; next }
+    /^\\\[chaotic-aur\\\]/    { in_section=1; next }
+    /^\\s*\\\[/            { in_section=0 }
+    !in_section         { print }
+' "\\$PACMAN_CONF" >> "\$TMP_CONFIG"
+
+# C: Append all managed repos in the correct order
+{
+    echo ""
+    echo "# -- Kael OS & Allied Repositories (Managed by Attunement Ritual) --"
+    echo "[chaotic-aur]"
+    echo "Include = /etc/pacman.d/chaotic-mirrorlist"
+    echo ""
+    echo "[kael-os]"
+    echo "SigLevel = Required DatabaseOptional"
+    echo "Include = /etc/pacman.d/kael-os-mirrorlist"
+} >> "\$TMP_CONFIG"
+
+# D: Apply
+cat "\$TMP_CONFIG" | sudo tee "\$PACMAN_CONF" > /dev/null
+echo "✅ pacman.conf fully configured."
+
+
+# ===================================================================
+# PART 4: ACTIVATE MOUNT & SYNCHRONIZE
+# ===================================================================
+echo ""
+echo "--- [PART 4/5] Activating Mount & Synchronizing Databases... ---"
+sudo systemctl daemon-reload
+sudo systemctl enable --now "\\$AUTOMOUNT_UNIT_NAME"
+
+if ! systemctl is-active --quiet "\\$AUTOMOUNT_UNIT_NAME"; then
+    echo "❌ ERROR: Failed to start the automount service." >&2
+    echo "   Run 'systemctl status \\$AUTOMOUNT_UNIT_NAME' to diagnose." >&2
+    exit 1
+fi
+echo "--> Automount is armed. Forcing database sync..."
+sudo pacman -Syyu
+
+
+# ===================================================================
+# PART 5: INSTALL FINAL FORGE TOOLS
+# ===================================================================
+echo ""
+echo "--- [PART 5/5] Installing Final Forge Tools... ---"
+# CLEANUP: Remove legacy scripts before installing package
+if [ -f /usr/local/bin/chronicler ]; then
+    echo "--> Removing legacy manual 'chronicler' to allow package install..."
+    sudo chattr -i /usr/local/bin/chronicler &>/dev/null || true
+    sudo rm -f /usr/local/bin/chronicler
+fi
+
+sudo pacman -S --needed --noconfirm chronicler kael-shell
+echo "✅ All tools installed."
+echo ""
+echo "✨ Grand Attunement Ritual Complete! Your forge is ready for any quest."
 `;
+
 
 export const ForgeReconciliationModal: React.FC<ForgeReconciliationModalProps> = ({ onClose }) => {
-  const encodedRepair = btoa(unescape(encodeURIComponent(REPAIR_SCRIPT_RAW)));
-  const commandRepair = `echo "${encodedRepair}" | base64 --decode | bash`;
-
-  const encodedInstall = btoa(unescape(encodeURIComponent(INSTALL_SCRIPT_RAW)));
-  const commandInstall = `echo "${encodedInstall}" | base64 --decode | bash`;
-
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
         <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-3xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
                  <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
                     <ArrowDownTrayIcon className="w-5 h-5 text-dragon-fire" />
-                    <span>Grand Forge Maintenance</span>
+                    <span>Grand Forge Attunement (v1.7)</span>
                 </h2>
                 <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">
                     <CloseIcon className="w-5 h-5" />
@@ -211,33 +233,18 @@ export const ForgeReconciliationModal: React.FC<ForgeReconciliationModalProps> =
             </div>
             <div className="overflow-y-auto pr-2 text-forge-text-secondary leading-relaxed space-y-6">
                 <p>
-                    Architect, I have updated <strong className="text-dragon-fire">Spell I</strong> to include the Void Banishing Protocol, which aggressively cleans up recursive folders in your WebDisk.
+                    As you command, Architect. I have updated the Grand Attunement to incorporate the <strong className="text-dragon-fire">True Path (v1.7)</strong>.
                 </p>
                 
-                {/* Spell 1 */}
                 <div className="bg-forge-bg/50 p-4 rounded-lg border border-orc-steel/30 shadow-[0_0_15px_rgba(122,235,190,0.1)]">
                     <h3 className="font-bold text-orc-steel font-display flex items-center gap-2 mb-2 text-lg">
-                        <HammerIcon className="w-5 h-5" />
-                        <span>Spell I: The Mending</span>
+                        The Unified Incantation (v1.7)
                     </h3>
                     <p className="text-sm mb-3 text-forge-text-primary">
-                        Repairs repo permissions, signs the DB, fixes persistent paths, and <strong className="text-dragon-fire">banishes WebDisk anomalies</strong>.
+                       This updated ritual will correct your repository configuration to resolve the 404 errors. It replaces the faulty mirror list with a new one containing the true coordinates for both the GitHub and WebDisk Athenaeums.
                     </p>
-                    <CodeBlock lang="bash">{commandRepair}</CodeBlock>
+                    <CodeBlock lang="bash">{`echo "${btoa(unescape(encodeURIComponent(UNIFIED_SCRIPT_RAW)))}" | base64 --decode | bash`}</CodeBlock>
                 </div>
-
-                {/* Spell 2 */}
-                <div className="bg-forge-bg/50 p-4 rounded-lg border border-dragon-fire/30 shadow-[0_0_15px_rgba(255,204,0,0.1)]">
-                    <h3 className="font-bold text-dragon-fire font-display flex items-center gap-2 mb-2 text-lg">
-                        <ShieldCheckIcon className="w-5 h-5" />
-                        <span>Spell II: The Armament</span>
-                    </h3>
-                    <p className="text-sm mb-3 text-forge-text-primary">
-                        Ensures all tools are installed and the environment is correct.
-                    </p>
-                    <CodeBlock lang="bash">{commandInstall}</CodeBlock>
-                </div>
-
             </div>
         </div>
     </div>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CloseIcon, KeyIcon } from '../core/Icons';
 import { CodeBlock } from '../core/CodeBlock';
@@ -42,9 +41,6 @@ fi
 `;
 
 export const PrimeGpgAgentModal: React.FC<PrimeGpgAgentModalProps> = ({ onClose }) => {
-    const encodedScript = btoa(unescape(encodeURIComponent(PRIME_SCRIPT_RAW)));
-    const finalCommand = `echo "${encodedScript}" | base64 --decode | bash`;
-
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
             <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-3xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
@@ -66,9 +62,9 @@ export const PrimeGpgAgentModal: React.FC<PrimeGpgAgentModalProps> = ({ onClose 
                     </p>
                     <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">The Priming Incantation</h3>
                     <p>
-                        Run this command in the terminal session where you'll be signing packages.
+                        Copy and run this entire script in the terminal session where you'll be signing packages.
                     </p>
-                    <CodeBlock lang="bash">{finalCommand}</CodeBlock>
+                    <CodeBlock lang="bash">{PRIME_SCRIPT_RAW}</CodeBlock>
                 </div>
             </div>
         </div>

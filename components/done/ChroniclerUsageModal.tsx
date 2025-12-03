@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CloseIcon, BookOpenIcon, SignalIcon, EyeIcon, ShieldCheckIcon } from '../core/Icons';
+import { CloseIcon, BookOpenIcon, SignalIcon, EyeIcon, ShieldCheckIcon, ShellPromptIcon } from '../core/Icons';
 import { CodeBlock } from '../core/CodeBlock';
 
 interface ChroniclerUsageModalProps {
@@ -14,7 +14,7 @@ export const ChroniclerUsageModal: React.FC<ChroniclerUsageModalProps> = ({ onCl
                 <div className="flex justify-between items-center mb-4 flex-shrink-0">
                      <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
                         <BookOpenIcon className="w-5 h-5 text-dragon-fire" />
-                        <span>Chronicler's Guide v4.3</span>
+                        <span>Chronicler's Guide v4.7</span>
                     </h2>
                     <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">
                         <CloseIcon className="w-5 h-5" />
@@ -22,57 +22,50 @@ export const ChroniclerUsageModal: React.FC<ChroniclerUsageModalProps> = ({ onCl
                 </div>
                 <div className="overflow-y-auto pr-2 text-forge-text-secondary leading-relaxed space-y-4">
                     <p>
-                        The Chronicler has ascended to <strong className="text-dragon-fire">The Guardian (v4.3)</strong>.
+                        The Chronicler is active, but the <strong>Auto-Intervention</strong> protocols have been suspended to ensure stability during base64 rituals. You now have full manual control.
                     </p>
 
-                    <div className="bg-dragon-fire/10 border border-dragon-fire/30 p-4 rounded-lg">
-                        <h3 className="font-bold text-dragon-fire font-display flex items-center gap-2 mb-2">
-                            <ShieldCheckIcon className="w-5 h-5" />
-                            <span>The Guardian Protocol</span>
+                    <div className="bg-orc-steel/10 border border-orc-steel/30 p-4 rounded-lg">
+                        <h3 className="font-bold text-orc-steel font-display flex items-center gap-2 mb-2">
+                            <ShellPromptIcon className="w-5 h-5" />
+                            <span>Manual Control (Active)</span>
                         </h3>
                         <p className="text-sm mb-2 text-forge-text-primary">
-                            Kael now automatically intercepts dangerous commands.
+                            The shell will no longer interrupt you. To record a session or wrap a dangerous command, you must invoke the Chronicler yourself.
                         </p>
-                        <ul className="list-disc list-inside text-sm text-forge-text-primary space-y-1 mb-3">
-                            <li><code className="font-mono text-xs text-orc-steel">pacman</code> / <code className="font-mono text-xs text-orc-steel">paru</code> / <code className="font-mono text-xs text-orc-steel">yay</code></li>
-                            <li><code className="font-mono text-xs text-orc-steel">makepkg</code></li>
-                        </ul>
-                        <p className="text-sm mb-3 text-forge-text-primary">
-                            When you run these, they are secretly wrapped in a recording session. If they fail, I have the logs to help you fix it.
-                        </p>
-                        <div className="bg-black/30 p-2 rounded border border-forge-border/50">
-                            <span className="text-xs text-forge-text-secondary block mb-1">Manual Wrapper:</span>
-                            <CodeBlock lang="bash">guard ./dangerous_script.sh</CodeBlock>
+                        
+                        <div className="space-y-3 mt-3">
+                            <div>
+                                <span className="text-xs font-bold text-dragon-fire uppercase tracking-wider">Start Recording Session</span>
+                                <p className="text-xs text-forge-text-secondary mb-1">Records everything until you type 'exit'.</p>
+                                <CodeBlock lang="bash">chronicler</CodeBlock>
+                            </div>
+                            
+                            <div>
+                                <span className="text-xs font-bold text-dragon-fire uppercase tracking-wider">Wrap Single Command</span>
+                                <p className="text-xs text-forge-text-secondary mb-1">Records just this command, then exits.</p>
+                                <CodeBlock lang="bash">chronicler exec ./dangerous_script.sh</CodeBlock>
+                            </div>
                         </div>
                     </div>
 
                     <div className="bg-blue-900/20 border border-blue-400/30 p-4 rounded-lg">
                         <h3 className="font-bold text-blue-400 font-display flex items-center gap-2 mb-2">
                             <EyeIcon className="w-5 h-5" />
-                            <span>The Overseer (Interactive)</span>
+                            <span>The Overseer (Snapshot)</span>
                         </h3>
                          <p className="text-sm mb-2 text-forge-text-primary">
-                             <strong>Tabula Rasa:</strong> Starts with a clean screen.
+                             The Overseer still watches when invoked. It creates timestamped backups of files.
                         </p>
-                        <p className="text-sm mb-2 text-forge-text-primary">
-                             <strong>Temporal Scrying:</strong> Automatically diffs and dumps any config files modified during your session.
-                        </p>
-                        <CodeBlock lang="bash">chronicler</CodeBlock>
-                    </div>
-                    
-                    <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">Archive Management</h3>
-                    <div className="grid gap-2">
-                        <div className="bg-forge-bg/50 p-2 rounded border border-forge-border">
-                            <span className="text-dragon-fire font-mono text-xs block mb-1">Snapshot File</span>
-                            <code className="text-xs">chronicler /path/to/file</code>
-                        </div>
-                        <div className="bg-forge-bg/50 p-2 rounded border border-forge-border">
-                            <span className="text-dragon-fire font-mono text-xs block mb-1">Restore File</span>
-                            <code className="text-xs">chronicler --restore /path/to/file</code>
-                        </div>
-                         <div className="bg-forge-bg/50 p-2 rounded border border-forge-border">
-                            <span className="text-dragon-fire font-mono text-xs block mb-1">Purge Old</span>
-                            <code className="text-xs">chronicler --purge /path/to/file</code>
+                        <div className="grid gap-2">
+                            <div className="bg-forge-bg/50 p-2 rounded border border-forge-border">
+                                <span className="text-dragon-fire font-mono text-xs block mb-1">Snapshot File</span>
+                                <code className="text-xs">chronicler /path/to/file</code>
+                            </div>
+                            <div className="bg-forge-bg/50 p-2 rounded border border-forge-border">
+                                <span className="text-dragon-fire font-mono text-xs block mb-1">Restore File</span>
+                                <code className="text-xs">chronicler --restore /path/to/file</code>
+                            </div>
                         </div>
                     </div>
 

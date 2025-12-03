@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CloseIcon, BroomIcon } from '../core/Icons';
 import { CodeBlock } from '../core/CodeBlock';
@@ -26,9 +25,6 @@ echo "✨ Ritual Complete! The pacman cache has been purified."
 `;
 
 export const PacmanPurificationModal: React.FC<PacmanPurificationModalProps> = ({ onClose }) => {
-    const encodedScript = btoa(unescape(encodeURIComponent(PURGE_SCRIPT_RAW)));
-    const finalCommand = `echo "${encodedScript}" | base64 --decode | bash`;
-
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
             <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-2xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
@@ -50,9 +46,9 @@ export const PacmanPurificationModal: React.FC<PacmanPurificationModalProps> = (
                     </p>
                     <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">The Purification Incantation</h3>
                     <p>
-                        Run this command to cleanse the cache.
+                        Copy and run this entire script to cleanse the cache.
                     </p>
-                    <CodeBlock lang="bash">{finalCommand}</CodeBlock>
+                    <CodeBlock lang="bash">{PURGE_SCRIPT_RAW}</CodeBlock>
                 </div>
             </div>
         </div>

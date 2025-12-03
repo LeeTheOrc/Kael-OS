@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { SendIcon, HammerIcon, ShieldCheckIcon, BookOpenIcon } from '../../core/Icons';
+import { SendIcon, HammerIcon, ShieldCheckIcon, BookOpenIcon, PaperClipIcon, ArchiveBoxIcon } from '../../core/Icons';
 import type { MenuType } from './ForgeActionsPanel';
 
 interface BottomPanelProps {
@@ -9,9 +8,10 @@ interface BottomPanelProps {
     onSendMessage: () => void;
     isLoading: boolean;
     onOpenMenu: (menu: MenuType) => void;
+    onOpenFilePicker: () => void;
 }
 
-export const BottomPanel: React.FC<BottomPanelProps> = ({ value, onChange, onSendMessage, isLoading, onOpenMenu }) => {
+export const BottomPanel: React.FC<BottomPanelProps> = ({ value, onChange, onSendMessage, isLoading, onOpenMenu, onOpenFilePicker }) => {
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -31,7 +31,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({ value, onChange, onSen
     return (
         <div className="bg-forge-panel/95 backdrop-blur-sm border-t-2 border-forge-border rounded-t-xl mt-auto pb-4 px-4 pt-3 shadow-2xl shadow-black/30">
             <div className="relative flex items-center gap-3">
-                {/* The Tripartite Menu */}
+                {/* The Quadripartite Menu */}
                 <div className="flex gap-1">
                     <button
                         onClick={() => onOpenMenu('forge')}
@@ -65,17 +65,35 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({ value, onChange, onSen
                             The Grimoire
                         </span>
                     </button>
+
+                    <button
+                        onClick={() => onOpenMenu('legacy')}
+                        className="p-3 bg-forge-bg border-2 border-forge-border rounded-lg text-forge-text-secondary hover:text-forge-text-primary hover:border-forge-text-secondary/50 transition-colors group relative"
+                        aria-label="Open Legacy Archive"
+                    >
+                        <ArchiveBoxIcon className="w-5 h-5" />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-forge-border text-forge-text-secondary">
+                            Legacy
+                        </span>
+                    </button>
                 </div>
 
                 {/* Input Area */}
                 <div className="relative w-full">
+                    <button
+                        onClick={onOpenFilePicker}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 text-forge-text-secondary hover:text-dragon-fire"
+                        aria-label="Attach file"
+                    >
+                        <PaperClipIcon className="w-5 h-5" />
+                    </button>
                     <textarea
                         ref={textareaRef}
                         value={value}
                         onChange={onChange}
                         onKeyDown={handleKeyDown}
                         placeholder={'Converse with Kael...'}
-                        className="w-full bg-forge-bg border-2 border-forge-border rounded-lg p-3 pr-16 resize-none focus:ring-1 focus:ring-dragon-fire text-base transition-colors text-forge-text-primary placeholder:text-forge-text-secondary"
+                        className="w-full bg-forge-bg border-2 border-forge-border rounded-lg p-3 pl-10 pr-16 resize-none focus:ring-1 focus:ring-dragon-fire text-base transition-colors text-forge-text-primary placeholder:text-forge-text-secondary"
                         rows={1}
                         disabled={isLoading}
                     />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { CloseIcon, EyeIcon } from '../core/Icons';
 import { CodeBlock } from '../core/CodeBlock';

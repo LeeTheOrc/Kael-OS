@@ -1,4 +1,3 @@
-
 export const COMMAND_SUGGESTIONS: string[] = [
     "What is Kael OS?",
     "Explain the Core Law.",

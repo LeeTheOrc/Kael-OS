@@ -1,8 +1,6 @@
 
-
-
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import type { Blueprint } from '../../lib/blueprint';
 import { 
     HammerIcon, 
     LockClosedIcon, 
@@ -28,13 +26,15 @@ import {
 
 interface SystemBlueprintPanelProps {
     className?: string;
+    blueprint: Blueprint;
 }
 
 type Status = 'protected' | 'forging' | 'pending' | 'testing';
 
 interface BlueprintSpec {
     label: string;
-    value: string;
+    value?: string;
+    blueprintKey?: keyof Blueprint;
     detail?: string;
     status: Status;
     icon: React.ReactNode;
@@ -44,6 +44,25 @@ interface BlueprintSection {
     title: string;
     specs: BlueprintSpec[];
 }
+
+const UptimeTimer: React.FC = () => {
+    const [seconds, setSeconds] = useState(0);
+
+    useEffect(() => {
+        // Use a random offset so it doesn't always start from 0
+        const randomOffset = Math.floor(Math.random() * 45) + 5;
+        setSeconds(randomOffset);
+        
+        const interval = setInterval(() => {
+            setSeconds(s => s + 1);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return <span className="text-forge-text-secondary/80"> • Running for {seconds}s</span>;
+};
+
 
 const StatusIcon: React.FC<{ status: Status }> = ({ status }) => {
     switch (status) {
@@ -78,10 +97,13 @@ const StatusIcon: React.FC<{ status: Status }> = ({ status }) => {
     }
 };
 
-const SpecRow: React.FC<{ spec: BlueprintSpec }> = ({ spec }) => {
+const SpecRow: React.FC<{ spec: BlueprintSpec; blueprint: Blueprint }> = ({ spec, blueprint }) => {
     const isProtected = spec.status === 'protected';
     const isForging = spec.status === 'forging';
     const isTesting = spec.status === 'testing';
+    
+    const value = (spec.blueprintKey && blueprint[spec.blueprintKey]) || spec.value || 'N/A';
+    const isCloudCore = spec.blueprintKey === 'cloudCore';
 
     let rowBorderColor = 'border-l-forge-border/30';
     let iconColor = 'text-forge-text-secondary';
@@ -118,7 +140,10 @@ const SpecRow: React.FC<{ spec: BlueprintSpec }> = ({ spec }) => {
                 <div className="flex flex-col min-w-0">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-forge-text-secondary/60">{spec.label}</span>
                     <span className={`font-mono text-xs font-medium truncate ${valueColor} ${isForging || isTesting ? 'animate-pulse' : ''}`}>
-                        {spec.value}
+                         {isCloudCore 
+                            ? <span>Gemini 2.5 Pro<UptimeTimer /></span> 
+                            : (Array.isArray(value) ? value.join(', ') : value)
+                        }
                     </span>
                     {spec.detail && (
                          <span className="text-[9px] text-forge-text-secondary/50 italic truncate">{spec.detail}</span>
@@ -132,7 +157,7 @@ const SpecRow: React.FC<{ spec: BlueprintSpec }> = ({ spec }) => {
     );
 };
 
-export const SystemBlueprintPanel: React.FC<SystemBlueprintPanelProps> = ({ className = "" }) => {
+export const SystemBlueprintPanel: React.FC<SystemBlueprintPanelProps> = ({ className = "", blueprint }) => {
     const sections: BlueprintSection[] = [
         {
             title: "Infrastructure (The Forge)",
@@ -217,152 +242,48 @@ export const SystemBlueprintPanel: React.FC<SystemBlueprintPanelProps> = ({ clas
         {
             title: "Core System (The Body)",
             specs: [
+                { label: "Base", blueprintKey: "base", status: 'protected', icon: <CubeIcon /> },
                 { 
-                    label: "Base", 
-                    value: "Arch Linux", 
-                    status: 'protected', 
-                    icon: <CubeIcon /> 
-                },
-                { 
-                    label: "Kernel", 
-                    value: "CachyOS", 
-                    detail: "Performance Tuned",
-                    status: 'protected', 
+                    label: "Kernel System", 
+                    value: "Sentinel Governed", 
+                    detail: "Auto-managed via 'khs' Guardian Pact", 
+                    status: 'forging', 
                     icon: <CpuChipIcon /> 
                 },
-                { 
-                    label: "Filesystem", 
-                    value: "BTRFS + Snapper", 
-                    detail: "Snapshot Support",
-                    status: 'protected', 
-                    icon: <DocumentDuplicateIcon /> 
-                },
-                { 
-                    label: "Boot Splash", 
-                    value: "Plymouth", 
-                    detail: "Silent Boot",
-                    status: 'pending', 
-                    icon: <EyeIcon /> 
-                },
-                { 
-                    label: "Security", 
-                    value: "UFW / Firewalld", 
-                    detail: "Network Aegis",
-                    status: 'pending', 
-                    icon: <ShieldCheckIcon /> 
-                },
+                { label: "Sovereign Kernels", value: "PGO/LTO Optimized", detail: "Forged for this machine", status: 'testing', icon: <CpuChipIcon /> },
+                { label: "Filesystem", blueprintKey: "filesystem", detail: "Snapshot Support", status: 'protected', icon: <DocumentDuplicateIcon /> },
+                { label: "Boot Splash", blueprintKey: "bootSplash", detail: "Silent Boot", status: 'pending', icon: <EyeIcon /> },
+                { label: "Security", blueprintKey: "security", detail: "Network Aegis", status: 'pending', icon: <ShieldCheckIcon /> },
             ]
         },
         {
             title: "Hybrid AI (The Animus)",
             specs: [
-                { 
-                    label: "Cloud Core", 
-                    value: "Gemini 3.0 Pro", 
-                    detail: "Online Oracle",
-                    status: 'forging', 
-                    icon: <GlobeAltIcon /> 
-                },
-                { 
-                    label: "Local Core", 
-                    value: "Llama 3 / Phi-3", 
-                    detail: "Offline Intelligence",
-                    status: 'testing', 
-                    icon: <CpuChipIcon /> 
-                },
-                { 
-                    label: "Terminal", 
-                    value: "Kaelic Shell v1.7.1", 
-                    detail: "Guardian Edition",
-                    status: 'protected', 
-                    icon: <ShellPromptIcon /> 
-                },
-                { 
-                    label: "Voice", 
-                    value: "Speech-to-Text", 
-                    detail: "Audio Interface",
-                    status: 'pending', 
-                    icon: <SignalIcon /> 
-                },
+                { label: "Cloud Core", blueprintKey: "cloudCore", detail: "Online Oracle", status: 'testing', icon: <GlobeAltIcon /> },
+                { label: "Local Core", blueprintKey: "localCore", detail: "Offline Intelligence", status: 'testing', icon: <CpuChipIcon /> },
+                { label: "Terminal", blueprintKey: "terminal", detail: "Guardian Edition", status: 'testing', icon: <ShellPromptIcon /> },
+                { label: "Voice", blueprintKey: "voiceSupport", detail: "Audio Interface", status: 'pending', icon: <SignalIcon /> },
             ]
         },
         {
             title: "Desktop (The Visage)",
             specs: [
-                { 
-                    label: "Env", 
-                    value: "KDE Plasma 6", 
-                    status: 'protected', 
-                    icon: <ComputerDesktopIcon /> 
-                },
-                { 
-                    label: "Login", 
-                    value: "SDDM", 
-                    status: 'protected', 
-                    icon: <LockClosedIcon /> 
-                },
-                { 
-                    label: "Theme", 
-                    value: "Kael Dark", 
-                    detail: "Global Theme",
-                    status: 'forging', 
-                    icon: <PaintBrushIcon /> 
-                },
-                { 
-                    label: "Icons", 
-                    value: "BeautySolar", 
-                    detail: "Icon Pack",
-                    status: 'forging', 
-                    icon: <SparklesIcon /> 
-                },
-                { 
-                    label: "Wallpapers", 
-                    value: "Kael Art", 
-                    detail: "4K Backgrounds",
-                    status: 'pending', 
-                    icon: <EyeIcon /> 
-                },
+                { label: "Env", blueprintKey: "desktopEnvironment", status: 'protected', icon: <ComputerDesktopIcon /> },
+                { label: "Login", blueprintKey: "displayManager", status: 'protected', icon: <LockClosedIcon /> },
+                { label: "Theme", blueprintKey: "theme", detail: "Global Theme", status: 'forging', icon: <PaintBrushIcon /> },
+                { label: "Icons", blueprintKey: "icons", detail: "Icon Pack", status: 'forging', icon: <SparklesIcon /> },
+                { label: "Wallpapers", blueprintKey: "wallpapers", detail: "4K Backgrounds", status: 'pending', icon: <EyeIcon /> },
             ]
         },
         {
             title: "Software (The Arsenal)",
             specs: [
-                { 
-                    label: "Browser", 
-                    value: "Firefox", 
-                    status: 'protected', 
-                    icon: <GlobeAltIcon /> 
-                },
-                { 
-                    label: "Code", 
-                    value: "VS Code Web", 
-                    status: 'protected', 
-                    icon: <ArrowDownTrayIcon /> 
-                },
-                { 
-                    label: "Backup", 
-                    value: "Chronicler", 
-                    status: 'protected', 
-                    icon: <DocumentDuplicateIcon /> 
-                },
-                { 
-                    label: "Pkgs", 
-                    value: "Paru (AUR)", 
-                    status: 'protected', 
-                    icon: <ShoppingCartIcon /> 
-                },
-                { 
-                    label: "Gaming", 
-                    value: "Steam / Lutris", 
-                    status: 'pending', 
-                    icon: <RocketLaunchIcon /> 
-                },
-                { 
-                    label: "Office", 
-                    value: "LibreOffice", 
-                    status: 'pending', 
-                    icon: <DocumentDuplicateIcon /> 
-                },
+                { label: "Browser", blueprintKey: "browser", status: 'protected', icon: <GlobeAltIcon /> },
+                { label: "Code", blueprintKey: "codeEditor", status: 'protected', icon: <ArrowDownTrayIcon /> },
+                { label: "Backup", blueprintKey: "backupTool", status: 'protected', icon: <DocumentDuplicateIcon /> },
+                { label: "Pkgs", blueprintKey: "aurHelper", status: 'protected', icon: <ShoppingCartIcon /> },
+                { label: "Gaming", blueprintKey: "gaming", status: 'pending', icon: <RocketLaunchIcon /> },
+                { label: "Office", blueprintKey: "office", status: 'pending', icon: <DocumentDuplicateIcon /> },
             ]
         }
     ];
@@ -387,7 +308,7 @@ export const SystemBlueprintPanel: React.FC<SystemBlueprintPanelProps> = ({ clas
                         </h3>
                         <div className="space-y-0.5">
                             {section.specs.map((spec, i) => (
-                                <SpecRow key={i} spec={spec} />
+                                <SpecRow key={i} spec={spec} blueprint={blueprint} />
                             ))}
                         </div>
                     </div>

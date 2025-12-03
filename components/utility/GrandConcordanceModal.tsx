@@ -232,7 +232,7 @@ const INSTALLER_SCRIPT_RAW = `#!/bin/bash
 set -e
 # Create the script content in a temporary file
 cat > /tmp/grand-concordance << 'EOF'
-${CONCORDANCE_SCRIPT_RAW}
+\${CONCORDANCE_SCRIPT_RAW}
 EOF
 
 # Make it executable and move it to a system-wide path
@@ -243,9 +243,7 @@ echo "✅ 'grand-concordance' command has been installed to /usr/local/bin/"
 `;
 
 export const GrandConcordanceModal: React.FC<GrandConcordanceModalProps> = ({ onClose }) => {
-    const finalInstallerScript = INSTALLER_SCRIPT_RAW.replace('${CONCORDANCE_SCRIPT_RAW}', CONCORDANCE_SCRIPT_RAW);
-    const encodedInstaller = btoa(unescape(encodeURIComponent(finalInstallerScript)));
-    const finalInstallCommand = `echo "${encodedInstaller}" | base64 --decode | bash`;
+    const finalInstallerScript = INSTALLER_SCRIPT_RAW.replace('\${CONCORDANCE_SCRIPT_RAW}', CONCORDANCE_SCRIPT_RAW);
     
     const runCommand = `grand-concordance`;
 
@@ -269,14 +267,14 @@ export const GrandConcordanceModal: React.FC<GrandConcordanceModalProps> = ({ on
                        <strong className="text-orc-steel">Ghostbuster Fix:</strong> The ritual now uses <code className="font-mono text-xs">rsync --copy-links</code> when syncing to the local WebDisk mount. This resolves the "Function not implemented" error caused by WebDAV's inability to handle symbolic links, ensuring a flawless sync.
                     </p>
                     <p className="text-sm text-red-400 font-bold">
-                       ⚠️ You MUST run the upgrade command below to update the tool on your system.
+                       ⚠️ You MUST run the upgrade script below to update the tool on your system.
                     </p>
 
                     <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">Step 1: Upgrade the Familiar</h3>
                     <p>
                         Run this to update the <code className="font-mono text-xs">grand-concordance</code> command on your system.
                     </p>
-                    <CodeBlock lang="bash">{finalInstallCommand}</CodeBlock>
+                    <CodeBlock lang="bash">{finalInstallerScript}</CodeBlock>
 
                      <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">Step 2: Invoke the Ritual</h3>
                     <p>

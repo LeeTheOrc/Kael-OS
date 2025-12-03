@@ -34,7 +34,7 @@ export const FormattedContent: React.FC<{ text: string }> = ({ text }) => {
             const match = /language-(\w+)/.exec(className || '')
             return !inline && match ? (
               <CodeBlock lang={match[1]}>
-                {String(children).replace(/\\n$/, '')}
+                {String(children).replace(/\n$/, '')}
               </CodeBlock>
             ) : (
               <code className="font-mono text-xs bg-forge-bg px-1 py-0.5 rounded border border-forge-border" {...props}>

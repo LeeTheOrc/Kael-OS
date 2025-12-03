@@ -1,7 +1,9 @@
 
 import React from 'react';
-import { CloseIcon, CompletedGrimoireIcon, ScrollIcon, RocketLaunchIcon, SparklesIcon } from '../core/Icons';
-import type { ModalType } from '../../App';
+// FIX: Replaced non-existent CompletedGrimoireIcon with BookOpenIcon
+import { CloseIcon, BookOpenIcon, ScrollIcon, RocketLaunchIcon, SparklesIcon } from '../core/Icons';
+// FIX: Imported ModalType from types.ts where it is exported
+import type { ModalType } from '../../types';
 
 interface LoreArchiveModalProps {
     onClose: () => void;
@@ -24,7 +26,8 @@ export const LoreArchiveModal: React.FC<LoreArchiveModalProps> = ({ onClose, onO
             <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-md p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-4 flex-shrink-0">
                      <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
-                        <CompletedGrimoireIcon className="w-5 h-5 text-dragon-fire" />
+                        {/* FIX: Replaced non-existent CompletedGrimoireIcon with BookOpenIcon */}
+                        <BookOpenIcon className="w-5 h-5 text-dragon-fire" />
                         <span>The Grand Grimoire</span>
                     </h2>
                     <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CloseIcon, UsbDriveIcon } from '../core/Icons';
 import { CodeBlock } from '../core/CodeBlock';
@@ -11,8 +10,15 @@ const BACKUP_SCRIPT_RAW = `#!/bin/bash
 set -euo pipefail
 
 echo "--- GPG Key Backup Ritual ---"
-read -p "Enter the email or Key ID of the GPG key to back up: " GPG_IDENTIFIER
-read -p "Enter path for the backup file (e.g., /media/usb/mykey.asc): " BACKUP_PATH
+
+# Use /dev/tty to force reading from keyboard if script is piped
+if [ -c /dev/tty ]; then
+    read -p "Enter the email or Key ID of the GPG key to back up: " GPG_IDENTIFIER < /dev/tty
+    read -p "Enter path for the backup file (e.g., /media/usb/mykey.asc): " BACKUP_PATH < /dev/tty
+else
+    read -p "Enter the email or Key ID of the GPG key to back up: " GPG_IDENTIFIER
+    read -p "Enter path for the backup file (e.g., /media/usb/mykey.asc): " BACKUP_PATH
+fi
 
 if [ -z "\$GPG_IDENTIFIER" ] || [ -z "\$BACKUP_PATH" ]; then
     echo "❌ ERROR: Key identifier and backup path cannot be empty." >&2
@@ -30,7 +36,12 @@ const RESTORE_SCRIPT_RAW = `#!/bin/bash
 set -euo pipefail
 
 echo "--- GPG Key Restore Ritual ---"
-read -p "Enter the path to the backup file to restore (e.g., /media/usb/mykey.asc): " BACKUP_PATH
+
+if [ -c /dev/tty ]; then
+    read -p "Enter the path to the backup file to restore (e.g., /media/usb/mykey.asc): " BACKUP_PATH < /dev/tty
+else
+    read -p "Enter the path to the backup file to restore (e.g., /media/usb/mykey.asc): " BACKUP_PATH
+fi
 
 if [ ! -f "\$BACKUP_PATH" ]; then
     echo "❌ ERROR: Backup file not found at '\$BACKUP_PATH'" >&2
@@ -49,12 +60,6 @@ echo "✅ Restore Complete!"
 `;
 
 export const KeyBackupModal: React.FC<KeyBackupModalProps> = ({ onClose }) => {
-    const encodedBackup = btoa(unescape(encodeURIComponent(BACKUP_SCRIPT_RAW)));
-    const backupCommand = `echo "${encodedBackup}" | base64 --decode | bash`;
-    
-    const encodedRestore = btoa(unescape(encodeURIComponent(RESTORE_SCRIPT_RAW)));
-    const restoreCommand = `echo "${encodedRestore}" | base64 --decode | bash`;
-
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
             <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-3xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
@@ -76,13 +81,13 @@ export const KeyBackupModal: React.FC<KeyBackupModalProps> = ({ onClose }) => {
                     <p>
                         This incantation will export your secret GPG key to a single armored file. Store this file on a secure, external device.
                     </p>
-                    <CodeBlock lang="bash">{backupCommand}</CodeBlock>
+                    <CodeBlock lang="bash">{BACKUP_SCRIPT_RAW}</CodeBlock>
 
                      <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">Restore Ritual</h3>
                     <p>
                         This incantation will import a GPG key from a backup file, restoring your identity to a new system.
                     </p>
-                    <CodeBlock lang="bash">{restoreCommand}</CodeBlock>
+                    <CodeBlock lang="bash">{RESTORE_SCRIPT_RAW}</CodeBlock>
                 </div>
             </div>
         </div>

@@ -1,13 +1,11 @@
 
-
-
 import React from 'react';
 import { 
-    CpuChipIcon, 
-    ShellPromptIcon,
-    GlobeAltIcon
+    KeyIcon,
+    EyeIcon,
 } from '../../core/Icons';
-import type { ModalType } from '../../../App';
+// FIX: Imported ModalType from types.ts where it is exported
+import type { ModalType } from '../../../types';
 
 interface QuickAccessItem {
     id: ModalType;
@@ -21,27 +19,18 @@ interface QuickAccessDockProps {
 }
 
 export const QuickAccessDock: React.FC<QuickAccessDockProps> = ({ onOpenModal }) => {
-    // Active Project Slots: 
-    // 1. Kaelic Shell (The Interface)
-    // 2. Forge Local Core (The Offline Mind)
-    // 3. Forge Cloud Core (The Online Oracle)
+    // Focus Mode: The most critical, session-based ritual is pinned.
     const activeProjects: QuickAccessItem[] = [
         { 
-            id: 'kaelicShell', 
-            label: 'Kaelic Shell', 
-            icon: <ShellPromptIcon className="w-5 h-5" />,
-            color: 'text-magic-purple'
-        },
-        { 
-            id: 'kaelLocalCore', 
-            label: 'Forge Local Core', 
-            icon: <CpuChipIcon className="w-5 h-5" />,
+            id: 'gpgKeyAwakening', 
+            label: 'Awaken GPG Agent', 
+            icon: <KeyIcon className="w-5 h-5" />,
             color: 'text-dragon-fire'
         },
         { 
-            id: 'kaelCloudCore', 
-            label: 'Forge Cloud Core', 
-            icon: <GlobeAltIcon className="w-5 h-5" />,
+            id: 'lastForgeLog', 
+            label: 'View Last Forge Log', 
+            icon: <EyeIcon className="w-5 h-5" />,
             color: 'text-orc-steel'
         }
     ];

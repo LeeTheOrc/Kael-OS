@@ -1,14 +1,15 @@
 
 import React from 'react';
-import type { ModalType } from '../../../App';
+import type { ModalType } from '../../../types';
 import {
     CloseIcon, HammerIcon, SignalIcon, DocumentDuplicateIcon, ServerIcon, CubeIcon, GlobeAltIcon,
-    CpuChipIcon, ShellPromptIcon, KeyIcon, ShoppingCartIcon, EyeIcon, UsbDriveIcon, LinkIcon,
-    BookOpenIcon, DocumentIcon, FlameIcon, ArrowDownTrayIcon, ShieldCheckIcon, ScrollIcon,
-    RocketLaunchIcon, SparklesIcon, PackageIcon, ComputerDesktopIcon
+    CpuChipIcon, ShellPromptIcon, KeyIcon, EyeIcon, UsbDriveIcon, LinkIcon,
+    BookOpenIcon, FlameIcon, ArrowDownTrayIcon, ShieldCheckIcon, ScrollIcon,
+    RocketLaunchIcon, SparklesIcon, ComputerDesktopIcon, FolderIcon, PaintBrushIcon, PencilIcon,
+    ArchiveBoxIcon, PackageIcon, BroomIcon
 } from '../../core/Icons';
 
-export type MenuType = 'forge' | 'sanctum' | 'lore' | null;
+export type MenuType = 'forge' | 'sanctum' | 'lore' | 'legacy' | null;
 
 interface ForgeActionsPanelProps {
     activeMenu: MenuType;
@@ -16,7 +17,7 @@ interface ForgeActionsPanelProps {
     onOpenModal: (modal: ModalType) => void;
 }
 
-const ActionButton: React.FC<{ title: string; description: string; icon: React.ReactNode; onClick: () => void; colorClass?: string }> = ({ title, description, icon, onClick, colorClass = 'text-dragon-fire' }) => (
+const ActionButton: React.FC<{ title: React.ReactNode; description: string; icon: React.ReactNode; onClick: () => void; colorClass?: string }> = ({ title, description, icon, onClick, colorClass = 'text-dragon-fire' }) => (
     <button
         onClick={onClick}
         className="w-full text-left p-3 flex items-center gap-4 bg-forge-bg/50 hover:bg-forge-border/50 border border-transparent hover:border-forge-border rounded-lg transition-all group"
@@ -25,7 +26,7 @@ const ActionButton: React.FC<{ title: string; description: string; icon: React.R
             {icon}
         </div>
         <div>
-            <h3 className="font-semibold text-forge-text-primary">{title}</h3>
+            <h3 className="font-semibold text-forge-text-primary flex items-center gap-2">{title}</h3>
             <p className="text-xs text-forge-text-secondary">{description}</p>
         </div>
     </button>
@@ -51,6 +52,8 @@ export const ForgeActionsPanel: React.FC<ForgeActionsPanelProps> = ({ activeMenu
                 return { title: "The Sanctum", icon: <ShieldCheckIcon className="w-6 h-6 text-orc-steel" />, color: "text-orc-steel" };
             case 'lore':
                 return { title: "The Grimoire", icon: <BookOpenIcon className="w-6 h-6 text-magic-purple" />, color: "text-magic-purple" };
+            case 'legacy':
+                return { title: "Legacy Archives", icon: <ArchiveBoxIcon className="w-6 h-6 text-forge-text-secondary" />, color: "text-forge-text-secondary" };
             default:
                 return { title: "Unknown", icon: null, color: "" };
         }
@@ -65,7 +68,7 @@ export const ForgeActionsPanel: React.FC<ForgeActionsPanelProps> = ({ activeMenu
 
             {/* Panel */}
             <div className="fixed top-0 right-0 bottom-0 w-full max-w-md bg-forge-panel border-l-2 border-forge-border shadow-2xl flex flex-col animate-slide-in-right">
-                <header className="flex items-center justify-between p-5 border-b border-forge-border flex-shrink-0 bg-forge-bg/50">
+                <header className="flex items-center justify-between p-5 border-b border-forge-border flex-shrink-0 bg-forge-bg/80">
                     <h2 className={`text-2xl font-bold ${color} flex items-center gap-3 font-display tracking-wider`}>
                         {icon}
                         <span>{title}</span>
@@ -79,52 +82,94 @@ export const ForgeActionsPanel: React.FC<ForgeActionsPanelProps> = ({ activeMenu
                     {/* --- FORGE CONTENT (Active Work) --- */}
                     {activeMenu === 'forge' && (
                         <>
-                             <ActionSection title="The Genesis Path">
-                                <ActionButton title="Install Forge Dependencies" description="Install base-devel, git, and attune repos." icon={<PackageIcon className="w-5 h-5" />} onClick={() => onOpenModal('forgeDependencies')} />
-                                <ActionButton title="Setup Local Forge" description="Create directory structure and clone repos." icon={<ComputerDesktopIcon className="w-5 h-5" />} onClick={() => onOpenModal('forgeSetup')} />
-                                <ActionButton title="Configure Athenaeum Paths" description="Optimize makepkg to use ~/forge/artifacts." icon={<LinkIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumPathfinding')} />
-                                <ActionButton title="Sanctify Athenaeum" description="Create and sign the local repository DB." icon={<ShieldCheckIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumSanctification')} />
-                             </ActionSection>
-
-                            <ActionSection title="The Scribe's Path">
-                                <ActionButton title="Grand Concordance" description="Forge a package and push to all Athenaeums." icon={<SignalIcon className="w-5 h-5" />} onClick={() => onOpenModal('grandConcordance')} colorClass="text-orc-steel" />
-                                <ActionButton title="Upgrade Concordance" description="Install the latest forge-and-publish tool." icon={<ArrowDownTrayIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumScribe')} />
+                           <ActionSection title="Core Setup">
+                                <ActionButton title="Install Forge Dependencies" description="Phase 1 & 2: Tools, Repos, and Assets." icon={<PackageIcon className="w-5 h-5" />} onClick={() => onOpenModal('forgeDependencies')} />
+                                <ActionButton title="Setup GPG Persistence" description="One-time setup for a persistent GPG agent." icon={<ShieldCheckIcon className="w-5 h-5" />} onClick={() => onOpenModal('gpgPersistence')} />
+                                <ActionButton title="Attune The Master Crafter" description="Enable multi-core compilation for makepkg." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('makepkgAttunement')} />
+                                <ActionButton title="Awaken GPG Agent (v1.2)" description="Manually unlock your GPG key for signing." icon={<KeyIcon className="w-5 h-5" />} onClick={() => onOpenModal('gpgKeyAwakening')} />
+                                <ActionButton title="Forge Custom ISO & VM" description="Setup a development VM with shared folders." icon={<ComputerDesktopIcon className="w-5 h-5" />} onClick={() => onOpenModal('qemuVmSetup')} />
+                                <ActionButton title="Mount VM Shared Folders" description="Manually mount 'host_forge' & 'host_webdisk'." icon={<LinkIcon className="w-5 h-5" />} onClick={() => onOpenModal('vmMountRitual')} />
+                                <ActionButton title="Transfer GPG Identity to VM" description="Export host key to shared VM folder." icon={<KeyIcon className="w-5 h-5" />} onClick={() => onOpenModal('gpgTransferRitual')} />
+                                <ActionButton title={<span>Setup Git LFS (v2.0)</span>} description="One-time setup for large file storage." icon={<ServerIcon className="w-5 h-5" />} onClick={() => onOpenModal('gitLfsSetup')} />
                             </ActionSection>
                             
-                            <ActionSection title="Package Grimoires">
-                                <ActionButton title="Forge Kael Cloud Core" description="Build the self-hosted public chat UI." icon={<GlobeAltIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelCloudCore')} colorClass="text-magic-purple" />
-                                <ActionButton title="Forge Kael Local Core" description="Build the offline AI (Ollama) package." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelLocalCore')} colorClass="text-magic-purple" />
-                                <ActionButton title="Forge Kaelic Shell" description="Build the Rust-based shell with mouse support." icon={<ShellPromptIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelicShell')} colorClass="text-magic-purple" />
+                            <ActionSection title="Sovereign Packages & Tools">
+                                <ActionButton title="Grand Concordance (Scribe)" description="Forge, Sign & Publish an artifact." icon={<BookOpenIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumScribe')} />
+                                <ActionButton title="Forge Sovereign Assets 0.00.01" description="Forge font and icon packs." icon={<PaintBrushIcon className="w-5 h-5" />} onClick={() => onOpenModal('sovereignAssets')} />
+                                <ActionButton title="Sovereign Kernel Forge" description="Forge a PGO/LTO optimized kernel." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('personalizedKernelForge')} />
+                                <ActionButton title={<span>Forge Single Kernel (Armory) <span className="text-xs text-dragon-fire/70">[HOST]</span></span>} description="Compile a specific, optimized kernel." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('individualKernelForge')} />
+                                <ActionButton title="Forge Kernel Governor v0.00.02" description="The self-managing kernel package." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('kernelGovernor')} />
+                                <ActionButton title="Forge Driver Sentinel v0.056" description="Auto-manage drivers & kernel." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelicHardwareScryer')} />
+                                <ActionButton title="Forge Chronicler 0.00.01" description="Build the file backup & log utility." icon={<CubeIcon className="w-5 h-5" />} onClick={() => onOpenModal('chroniclerPackage')} />
                             </ActionSection>
 
-                            <ActionSection title="The Warden's Path">
-                                <ActionButton title="Prime GPG Agent" description="Wake up GPG and cache your passphrase." icon={<KeyIcon className="w-5 h-5" />} onClick={() => onOpenModal('primeGpgAgent')} />
-                                <ActionButton title="Pacman Purification" description="Clean the pacman package cache." icon={<ShoppingCartIcon className="w-5 h-5" />} onClick={() => onOpenModal('pacmanPurification')} />
-                                <ActionButton title="Scry Pacman Conf" description="View the current pacman configuration." icon={<EyeIcon className="w-5 h-5" />} onClick={() => onOpenModal('scryPacmanConf')} />
-                                <ActionButton title="Key Backup & Restore" description="Export or import your GPG key." icon={<UsbDriveIcon className="w-5 h-5" />} onClick={() => onOpenModal('keyBackup')} />
-                                <ActionButton title="Chronicler Usage Guide" description="Learn how to use the backup tool." icon={<BookOpenIcon className="w-5 h-5" />} onClick={() => onOpenModal('chroniclerUsage')} />
+                            <ActionSection title="Forge Maintenance">
+                                <ActionButton title="Reconcile Repositories" description="Fix 404 errors by reinstalling repo configs." icon={<SignalIcon className="w-5 h-5" />} onClick={() => onOpenModal('forgeReconciliation')} colorClass="text-orc-steel" />
+                                <ActionButton title="Athenaeum Repair Ritual" description="Fix 'kael-os-local.db not found' errors." icon={<ShieldCheckIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumRepair')} colorClass="text-orc-steel" />
+                                <ActionButton title="Athenaeum LFS Repair Ritual" description="Fix GitHub push errors for large files." icon={<ServerIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumLfsRepair')} colorClass="text-orc-steel" />
+                                <ActionButton title="Athenaeum Flattening Ritual" description="Fix nested gh-pages directory." icon={<FolderIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumFlattening')} colorClass="text-orc-steel" />
+                                <ActionButton title="Athenaeum Purification" description="Remove unwanted artifacts from local repo." icon={<BroomIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumPurification')} colorClass="text-orc-steel" />
                             </ActionSection>
                         </>
                     )}
 
                     {/* --- SANCTUM CONTENT (Completed/Protected) --- */}
                     {activeMenu === 'sanctum' && (
+                         <>
+                             <ActionSection title="System Repair">
+                                <ActionButton title="CachyOS Restoration Ritual" description="Fix a broken CachyOS keyring." icon={<ShieldCheckIcon className="w-5 h-5" />} onClick={() => onOpenModal('cachyosRepair')} colorClass="text-dragon-fire" />
+                             </ActionSection>
+                             <ActionSection title="Armory Management">
+                                <ActionButton title={<span>Forge Full Kernel Armory <span className="text-xs text-orc-steel">[PROTECTED]</span></span>} description="Mass-compile all distributable kernels." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('grandArmoryForge')} colorClass="text-orc-steel" />
+                            </ActionSection>
+                            <ActionSection title="Guides & Utilities">
+                                <ActionButton title="Chronicler Usage Guide" description="Learn how to use the backup tool." icon={<BookOpenIcon className="w-5 h-5" />} onClick={() => onOpenModal('chroniclerUsage')} colorClass="text-orc-steel" />
+                                <ActionButton title="Key Backup & Restore" description="Export or import your GPG signing key." icon={<UsbDriveIcon className="w-5 h-5" />} onClick={() => onOpenModal('keyBackup')} colorClass="text-orc-steel" />
+                            </ActionSection>
+                             <ActionSection title="Core Packages">
+                                <ActionButton title="Kael Cloud Core" description="Meta-package for the Cloud Animus." icon={<GlobeAltIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelCloudCore')} colorClass="text-orc-steel" />
+                                <ActionButton title="Kael Local Core" description="Installs Ollama & the Soul-Warden." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelLocalCore')} colorClass="text-orc-steel" />
+                            </ActionSection>
+                             <ActionSection title="Dangerous Rituals">
+                                <ActionButton title="Purge Chat History" description="[Locked] Purge conversation history." icon={<FlameIcon className="w-5 h-5" />} onClick={() => onOpenModal('goNuclear')} colorClass="text-red-500" />
+                            </ActionSection>
+                        </>
+                    )}
+
+                    {/* --- LEGACY CONTENT (Archived) --- */}
+                    {activeMenu === 'legacy' && (
                         <>
-                             <div className="p-4 bg-green-900/20 border border-orc-steel/30 rounded-lg mb-4">
-                                <p className="text-sm text-orc-steel">
-                                    These rituals are complete and stable. 
-                                    They are archived here for easy access.
+                             <div className="p-4 bg-forge-bg/30 border border-forge-border rounded-lg mb-4">
+                                <p className="text-sm text-forge-text-secondary">
+                                    This archive contains rituals for system resets or those made obsolete by newer, unified incantations.
                                 </p>
                              </div>
-                             <ActionSection title="Protected Rituals">
-                                <ActionButton title="Grand Forge Maintenance" description="Repair connections and arm the forge." icon={<ArrowDownTrayIcon className="w-5 h-5" />} onClick={() => onOpenModal('forgeReconciliation')} colorClass="text-orc-steel" />
-                                <ActionButton title="Automount WebDisk" description="Set up automatic WebDisk mounting on login." icon={<ServerIcon className="w-5 h-5" />} onClick={() => onOpenModal('webDiskAutomount')} colorClass="text-orc-steel" />
-                                <ActionButton title="WebDisk Manual Sync" description="Manually sync full forge to WebDisk." icon={<DocumentDuplicateIcon className="w-5 h-5" />} onClick={() => onOpenModal('webDiskMount')} colorClass="text-orc-steel" />
-                                <ActionButton title="Forge Chronicler Package" description="Build the file backup utility package." icon={<CubeIcon className="w-5 h-5" />} onClick={() => onOpenModal('chroniclerPackage')} colorClass="text-orc-steel" />
+
+                             <ActionSection title="Archived Core Setup">
+                                <ActionButton title="Setup Local Forge" description="Create ~/forge and clone repositories." icon={<ComputerDesktopIcon className="w-5 h-5" />} onClick={() => onOpenModal('forgeSetup')} colorClass="text-forge-text-secondary" />
+                                <ActionButton title="Automount WebDisk" description="Set up automatic, persistent WebDisk." icon={<ServerIcon className="w-5 h-5" />} onClick={() => onOpenModal('webDiskAutomount')} colorClass="text-forge-text-secondary" />
+                                <ActionButton title="Attune GPG Keyring" description="Make pacman trust your signing key." icon={<KeyIcon className="w-5 h-5" />} onClick={() => onOpenModal('keyringAttunement')} colorClass="text-forge-text-secondary" />
+                                <ActionButton title="Athenaeum Concordance" description="Manually sync all repositories." icon={<SignalIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumConcordance')} colorClass="text-forge-text-secondary" />
+                                <ActionButton title="WebDisk Forge Sync" description="Sync entire forge to WebDisk." icon={<DocumentDuplicateIcon className="w-5 h-5" />} onClick={() => onOpenModal('webDiskMount')} colorClass="text-forge-text-secondary" />
+                                <ActionButton title="Sanctify Athenaeum" description="Force-create local repo DB." icon={<ShieldCheckIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumSanctification')} colorClass="text-forge-text-secondary" />
+                                <ActionButton title="Configure Build Paths" description="Optimize makepkg to use ~/forge." icon={<FolderIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumPathfinding')} colorClass="text-forge-text-secondary" />
+                             </ActionSection>
+                             
+                             <ActionSection title="Archived Terminal Suite">
+                                <ActionButton title="Forge AI Configurator" description="Manage Kael's Hybrid Core." icon={<SparklesIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelAIConfigurator')} colorClass="text-forge-text-secondary" />
+                                <ActionButton title="Forge Kaelic Shell" description="The conversational AI Shell." icon={<ShellPromptIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelicShell')} colorClass="text-forge-text-secondary" />
+                                <ActionButton title="Forge Kaelic Terminal" description="Quest: Build our sovereign AI Terminal." icon={<ShellPromptIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelicTerminal')} colorClass="text-forge-text-secondary" />
+                                <ActionButton title="Install Kaelic Terminal" description="Install the forged terminal artifact." icon={<ArrowDownTrayIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelicTerminalInstall')} colorClass="text-forge-text-secondary" />
+                                <ActionButton title="Create Menu Entry" description="Add Kaelic Terminal to the start menu." icon={<PencilIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelicTerminalDesktopEntry')} colorClass="text-forge-text-secondary" />
                             </ActionSection>
 
-                            <ActionSection title="Dangerous Arts">
-                                <ActionButton title="Rite of Annihilation" description="[Locked] Permanently purge the entire chat history." icon={<FlameIcon className="w-5 h-5" />} onClick={() => onOpenModal('goNuclear')} colorClass="text-red-500" />
+                             <ActionSection title="System Resets">
+                                <ActionButton title="Perform Grand Archive" description="Move all current work to Legacy and reset." icon={<ArchiveBoxIcon className="w-5 h-5" />} onClick={() => onOpenModal('grandArchiveRitual')} colorClass="text-dragon-fire" />
+                                <ActionButton title="Purge Forge & Configs" description="[DANGEROUS] Nuke all forge files." icon={<FlameIcon className="w-5 h-5" />} onClick={() => onOpenModal('fullForgePurification')} colorClass="text-red-500" />
+                             </ActionSection>
+
+                             <ActionSection title="Obsolete Rituals">
+                                <ActionButton title="Attune to WebDisk" description="Superseded by Unified Mirrorlist." icon={<LinkIcon className="w-5 h-5" />} onClick={() => onOpenModal('webDiskAttunement')} colorClass="text-forge-text-secondary" />
                             </ActionSection>
                         </>
                     )}
