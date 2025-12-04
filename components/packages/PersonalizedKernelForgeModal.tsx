@@ -48,13 +48,13 @@ WantedBy=timers.target
 
     const commonSetup = `#!/bin/bash
 set -euo pipefail
-export USER_HOME=$(getent passwd "\\\${SUDO_USER:-\\\$USER}" | cut -d: -f6)
-export FORGE_BASE="\\\${USER_HOME}/forge"
-export PKG_DIR="\\\${FORGE_BASE}/packages/kaelic-kernel-sovereign-${source}"
+export USER_HOME=$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
+export FORGE_BASE="\$USER_HOME/forge"
+export PKG_DIR="\$FORGE_BASE/packages/kaelic-kernel-sovereign-${source}"
 export REPO_URL="https://github.com/archlinux/svntogit-packages.git"
 export BRANCH_NAME="packages/${source}/trunk"
-mkdir -p "\\\${PKG_DIR}"
-cd "\\\${PKG_DIR}"
+mkdir -p "\$PKG_DIR"
+cd "\$PKG_DIR"
 `;
 
     if (step === 'blueprint') {
@@ -65,9 +65,9 @@ echo ""
 
 echo "--> Summoning and preparing source code..."
 if [ ! -d ".git" ]; then
-    git clone --branch "\\\${BRANCH_NAME}" --single-branch "\\\${REPO_URL}" .
+    git clone --branch "\$BRANCH_NAME" --single-branch "\$REPO_URL" .
 else
-    git fetch origin "\\\${BRANCH_NAME}" && git reset --hard "origin/\\\${BRANCH_NAME}"
+    git fetch origin "\$BRANCH_NAME" && git reset --hard "origin/\$BRANCH_NAME"
 fi
 
 echo "--> Scribing a fresh PKGBUILD..."
@@ -113,6 +113,7 @@ fi
     }
 
     if (step === 'honing') {
+        // Using replace to inject the multi-line script content into the main script
         return `${commonSetup}
 echo "--- The Sovereign Blade Forge - Step 3: The Honing ---"
 echo "This will forge the FINAL, optimized kernel using your performance data."
@@ -153,20 +154,20 @@ sed -i "/^prepare() {/a \\    sed -i -e '/CONFIG_HZ_250=y/d' -e '/# CONFIG_HZ_10
 # Scribe the Chronicler's Bell (Reminder scripts)
 echo "--> Scribing the Chronicler's Bell (Monthly Re-forge Reminder)..."
 sudo mkdir -p /usr/local/bin
-sudo tee /usr/local/bin/kael-reforge-reminder-${blade}.sh > /dev/null <<'EOF'
+sudo tee /usr/local/bin/kael-reforge-reminder-${blade}.sh > /dev/null <<'EOF_REMINDER'
 ${REMINDER_SCRIPT_CONTENT}
-EOF
+EOF_REMINDER
 sudo chmod +x /usr/local/bin/kael-reforge-reminder-${blade}.sh
 
-sudo tee /etc/systemd/user/kael-reforge-reminder-${blade}.service > /dev/null <<'EOF'
+sudo tee /etc/systemd/user/kael-reforge-reminder-${blade}.service > /dev/null <<'EOF_SERVICE'
 ${REMINDER_SERVICE_CONTENT}
-EOF
-sudo tee /etc/systemd/user/kael-reforge-reminder-${blade}.timer > /dev/null <<'EOF'
+EOF_SERVICE
+sudo tee /etc/systemd/user/kael-reforge-reminder-${blade}.timer > /dev/null <<'EOF_TIMER'
 ${REMINDER_TIMER_CONTENT}
-EOF
+EOF_TIMER
 
 # Add install script to enable the timer
-cat > kael-sovereign.install << 'EOF'
+cat > kael-sovereign.install << 'EOF_INSTALL'
 post_install() {
     echo "--> Arming the Chronicler's Bell (Monthly Re-forge Reminder)..."
     systemctl --user enable --now kael-reforge-reminder-${blade}.timer || echo "Could not enable user timer. You may need to do it manually."
@@ -177,7 +178,7 @@ post_upgrade() {
 post_remove() {
     systemctl --user disable --now kael-reforge-reminder-${blade}.timer || true
 }
-EOF
+EOF_INSTALL
 sed -i '/^package() {/i install=kael-sovereign.install' PKGBUILD
 sed -i '/^source=(/a \\    "kael-sovereign.install"' PKGBUILD
 sed -i '/^sha256sums=(/a \\    "SKIP"' PKGBUILD
@@ -195,15 +196,12 @@ khs --scry-drivers
 khs --attune-bootloader
 
 echo "✅ Honed kernel forged, published, installed, and attuned!"
-`;
+`.replace(/\${REMINDER_SCRIPT_CONTENT}/g, REMINDER_SCRIPT_CONTENT)
+ .replace(/\${REMINDER_SERVICE_CONTENT}/g, REMINDER_SERVICE_CONTENT)
+ .replace(/\${REMINDER_TIMER_CONTENT}/g, REMINDER_TIMER_CONTENT)
     }
     return "# Invalid Step";
 };
-
-const wrapInBash = (script: string) => `bash -c "$(cat <<'EOF'
-${script.trim()}
-EOF
-)"`;
 
 export const PersonalizedKernelForgeModal: React.FC<PersonalizedKernelForgeModalProps> = ({ onClose }) => {
     const [activeBlade, setActiveBlade] = useState<KernelBlade>('work');
@@ -252,23 +250,27 @@ export const PersonalizedKernelForgeModal: React.FC<PersonalizedKernelForgeModal
                 </div>
 
                 <div className="overflow-y-auto pr-2 text-forge-text-secondary leading-relaxed space-y-6">
-                    {steps.map(step => (
-                        <div key={step.id} className="bg-forge-bg/50 p-4 rounded-lg border border-forge-border/50">
-                             <h3 className="font-semibold text-lg text-orc-steel mb-2">{step.title}</h3>
-                             <p className="text-sm mb-3">{step.description}</p>
-                             {activeBlade === 'gaming' && step.id === 'tempering' &&
-                                <div className="text-xs p-2 mb-3 bg-dragon-fire/10 border-l-4 border-dragon-fire rounded">
-                                    The <code className="font-mono text-dragon-fire">--temper-gaming</code> command will automatically install and run the <code className="font-mono">glmark2</code> benchmark to create a representative gaming profile.
-                                </div>
-                             }
-                              {activeBlade === 'work' && step.id === 'tempering' &&
-                                <div className="text-xs p-2 mb-3 bg-dragon-fire/10 border-l-4 border-dragon-fire rounded">
-                                   Note: The <code className="font-mono text-dragon-fire">--temper-work</code> command now uses <code className="font-mono text-dragon-fire">stress-ng</code> to generate a more versatile, general-purpose profile suitable for mixed workloads.
-                                </div>
-                             }
-                             <CodeBlock lang="bash">{wrapInBash(generateScript(activeBlade, step.id))}</CodeBlock>
-                        </div>
-                    ))}
+                    {steps.map(step => {
+                        const script = generateScript(activeBlade, step.id);
+                        const finalCommand = `bash <<'EOF'\n${script.trim()}\nEOF`;
+                        return (
+                            <div key={step.id} className="bg-forge-bg/50 p-4 rounded-lg border border-forge-border/50">
+                                <h3 className="font-semibold text-lg text-orc-steel mb-2">{step.title}</h3>
+                                <p className="text-sm mb-3">{step.description}</p>
+                                {activeBlade === 'gaming' && step.id === 'tempering' &&
+                                    <div className="text-xs p-2 mb-3 bg-dragon-fire/10 border-l-4 border-dragon-fire rounded">
+                                        The <code className="font-mono text-dragon-fire">--temper-gaming</code> command will automatically install and run the <code className="font-mono">glmark2</code> benchmark to create a representative gaming profile.
+                                    </div>
+                                }
+                                {activeBlade === 'work' && step.id === 'tempering' &&
+                                    <div className="text-xs p-2 mb-3 bg-dragon-fire/10 border-l-4 border-dragon-fire rounded">
+                                    Note: The <code className="font-mono text-dragon-fire">--temper-work</code> command now uses <code className="font-mono text-dragon-fire">stress-ng</code> to generate a more versatile, general-purpose profile suitable for mixed workloads.
+                                    </div>
+                                }
+                                <CodeBlock lang="bash">{finalCommand}</CodeBlock>
+                            </div>
+                        );
+                    })}
                      <div className="text-xs p-3 bg-red-900/20 border-l-4 border-red-500/70 rounded mt-4">
                         <strong className="text-red-400">Important:</strong> This is an expert ritual. Each step must be completed in order. This process involves rebooting your machine multiple times.
                     </div>

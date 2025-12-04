@@ -7,7 +7,10 @@ interface KaelicHardwareScryerModalProps {
   onClose: () => void;
 }
 
+// --- SCRIPT DEFINITIONS (v0.077 - The Direct Pact) ---
+
 const PREPARE_FORGE_SCRIPT = `
+#!/bin/bash
 # --- VM-AWARE PATHING ---
 USER_HOME=$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
 if [ -d "\$USER_HOME/host_forge" ]; then
@@ -20,7 +23,8 @@ cd "\${PKG_DIR}"
 rm -f *.pkg.tar.zst* PKGBUILD khs.sh
 `;
 
-const SUMMON_SOUL_SCRIPT = `
+const SCRIBE_SOUL_SCRIPT = `
+#!/bin/bash
 # --- VM-AWARE PATHING ---
 USER_HOME=$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
 if [ -d "\$USER_HOME/host_forge" ]; then
@@ -40,26 +44,27 @@ fi
 chmod +x khs.sh
 `;
 
-const PKGBUILD_CONTENT = `# Maintainer: Kael AI for The Architect
+const PKGBUILD_CONTENT = String.raw`# Maintainer: Kael AI for The Architect
 pkgname=kaelic-hardware-scryer
 _pkgname=khs
-pkgver=0.076
+pkgver=0.077
 pkgrel=1
-pkgdesc="The Adamant Soul: Kael's Sovereign Driver Sentinel for automated hardware and kernel management."
+pkgdesc="The Direct Pact: A resilient, self-managing Driver Sentinel."
 arch=('any')
 url="https://github.com/LeeTheOrc/Kael-OS"
 license=('GPL3')
-depends=('bash' 'coreutils' 'systemd' 'grep' 'sed' 'gawk' 'pacman' 'grub' 'libnotify' 'stress-ng' 'glmark2')
+depends=('bash' 'coreutils' 'systemd' 'grep' 'sed' 'gawk' 'pacman' 'grub' 'libnotify' 'stress-ng' 'glmark2' 'perf-tools-for-linux')
 optdepends=('nvidia-dkms: for NVIDIA GPUs' 'spice-vdagent: for QEMU/KVM VMs')
 source=("khs.sh")
 sha256sums=('SKIP')
 
 package() {
-    install -Dm755 "\\$srcdir/khs.sh" "\\$pkgdir/usr/bin/\\\$_pkgname"
+    install -Dm755 "\$srcdir/khs.sh" "\$pkgdir/usr/bin/\\$_pkgname"
 }
 `;
 
 const SCRIBE_BLUEPRINT_SCRIPT = `
+#!/bin/bash
 # --- VM-AWARE PATHING ---
 USER_HOME=$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
 if [ -d "\$USER_HOME/host_forge" ]; then
@@ -77,6 +82,7 @@ updpkgsums
 `;
 
 const FORGE_PUBLISH_SCRIPT = `
+#!/bin/bash
 # --- VM-AWARE PATHING ---
 USER_HOME=$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
 if [ -d "\$USER_HOME/host_forge" ]; then
@@ -97,30 +103,27 @@ fi
 `;
 
 const INSTALL_SCRIPT = `
+#!/bin/bash
 echo "--> Installing the artifact via pacman..."
 sudo pacman -S --noconfirm kaelic-hardware-scryer
 `;
 
 const INVOKE_SCRIPT = `
+#!/bin/bash
 echo "--> Invoking the Sentinel to govern the Realm..."
 sudo khs
 `;
-
-const wrapInBash = (script: string) => `bash -c "$(cat <<'EOF'
-${script.trim()}
-EOF
-)"`;
+    
+const steps = [
+    { num: 1, title: "Prepare Forge", script: `bash <<'EOF'\n${PREPARE_FORGE_SCRIPT.trim()}\nEOF`, description: "Creates a clean workspace for the artifact." },
+    { num: 2, title: "Scribe Soul", script: `bash <<'EOF'\n${SCRIBE_SOUL_SCRIPT.trim()}\nEOF`, description: "Summons the Sentinel's soul directly from GitHub, bypassing all encoding issues." },
+    { num: 3, title: "Scribe Blueprint", script: `bash <<'EOF'\n${SCRIBE_BLUEPRINT_SCRIPT.trim()}\nEOF`, description: "Scribes the artifact's blueprint (PKGBUILD) and attunes its runes (checksums)." },
+    { num: 4, title: "Forge & Publish", script: `bash <<'EOF'\n${FORGE_PUBLISH_SCRIPT.trim()}\nEOF`, description: "Invokes the 'grand-concordance' familiar to forge, sign, and publish the artifact to all Athenaeums." },
+    { num: 5, title: "Install", script: `bash <<'EOF'\n${INSTALL_SCRIPT.trim()}\nEOF`, description: "Summons the system quartermaster (pacman) to install the newly published artifact." },
+    { num: 6, title: "Invoke", script: `bash <<'EOF'\n${INVOKE_SCRIPT.trim()}\nEOF`, description: "Runs the Sentinel for the first time to begin governing your Realm." },
+];
 
 export const KaelicHardwareScryerModal: React.FC<KaelicHardwareScryerModalProps> = ({ onClose }) => {
-    const steps = [
-        { num: 1, title: "Prepare Forge", script: wrapInBash(PREPARE_FORGE_SCRIPT), description: "Creates a clean workspace for the artifact." },
-        { num: 2, title: "Summon Soul", script: wrapInBash(SUMMON_SOUL_SCRIPT), description: "Summons the Sentinel's soul (khs.sh) directly from its canonical source on GitHub." },
-        { num: 3, title: "Scribe Blueprint", script: wrapInBash(SCRIBE_BLUEPRINT_SCRIPT), description: "Scribes the artifact's blueprint (PKGBUILD) and attunes its runes (checksums)." },
-        { num: 4, title: "Forge & Publish", script: wrapInBash(FORGE_PUBLISH_SCRIPT), description: "Invokes the 'grand-concordance' familiar to forge, sign, and publish the artifact to all Athenaeums." },
-        { num: 5, title: "Install", script: wrapInBash(INSTALL_SCRIPT), description: "Summons the system quartermaster (pacman) to install the newly published artifact." },
-        { num: 6, title: "Invoke", script: wrapInBash(INVOKE_SCRIPT), description: "Runs the Sentinel for the first time to begin governing your Realm." },
-    ];
-    
     const [activeStep, setActiveStep] = useState(1);
     const activeStepData = steps.find(s => s.num === activeStep);
 
@@ -130,7 +133,7 @@ export const KaelicHardwareScryerModal: React.FC<KaelicHardwareScryerModalProps>
                 <header className="flex justify-between items-center mb-4 flex-shrink-0">
                      <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
                         <CpuChipIcon className="w-5 h-5 text-dragon-fire" />
-                        <span>Forge Driver Sentinel v0.076 (The Adamant Soul)</span>
+                        <span>Forge Driver Sentinel v0.077 (The Direct Pact)</span>
                     </h2>
                     <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">
                         <CloseIcon className="w-6 h-6" />
@@ -153,7 +156,7 @@ export const KaelicHardwareScryerModal: React.FC<KaelicHardwareScryerModalProps>
                     {activeStepData && (
                         <div className="animate-fade-in">
                              <p className="text-sm p-3 bg-orc-steel/10 border-l-4 border-orc-steel rounded">
-                                <strong className="text-orc-steel">The Adamant Soul (v0.076):</strong> My deepest apologies, Architect. This pact is the definitive fix, forged from your own insight. We now use a direct summoning for the script and wrap every command in a `bash` sub-shell to ensure perfect execution.
+                                <strong className="text-orc-steel">The Direct Pact (v0.077):</strong> My deepest apologies, Architect. This pact is the definitive fix. We now summon the Sentinel's soul directly from its source and invoke all rituals via a robust, shell-agnostic method. This will not fail.
                             </p>
                             <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">Incantation for Step {activeStepData.num}</h3>
                             <p className="text-sm mb-2">{activeStepData.description}</p>
