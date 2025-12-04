@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { CloseIcon, CpuChipIcon } from '../../core/Icons';
 import { CodeBlock } from '../../core/CodeBlock';
@@ -308,7 +307,7 @@ if [ -n "\$MOUNT_ROOT" ] && [ -d "\$MOUNT_ROOT" ]; then
     
     (
         cd "\$LOCAL_WEBDISK_REPO"
-        echo "    -> Transmuting WebDisk database names for Unified Mirrorlist..."
+        echo "    -> Transmuting database names for Unified Mirrorlist..."
         for db_file in kael-os-local.db*; do
             if [ -f "\$db_file" ]; then mv "\$db_file" "\${db_file/kael-os-local/kael-os-repo}"; fi
         done
@@ -344,8 +343,7 @@ export const GrandArmoryForgeModal: React.FC<GrandArmoryForgeModalProps> = ({ on
     const [activeStep, setActiveStep] = useState(1);
     
     const activeStepData = steps.find(s => s.num === activeStep);
-    const finalCommand = activeStepData ? `echo "${btoa(unescape(encodeURIComponent(activeStepData.script)))}" | base64 --decode | bash` : "";
-
+    const finalCommand = activeStepData ? `bash <<'EOF'\n${activeStepData.script}\nEOF` : "";
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>

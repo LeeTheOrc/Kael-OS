@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { CloseIcon, CpuChipIcon } from '../core/Icons';
 import { CodeBlock } from '../core/CodeBlock';
@@ -136,7 +135,7 @@ export const IndividualKernelForgeModal: React.FC<IndividualKernelForgeModalProp
     const [activeArch, setActiveArch] = useState(TARGET_ARCHS[0]);
 
     const script = generateScript(activeBase, activeArch);
-    const finalCommand = `echo "${btoa(unescape(encodeURIComponent(script)))}" | base64 --decode | bash`;
+    const finalCommand = `bash <<'EOF'\n${script}\nEOF`;
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>

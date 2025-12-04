@@ -26,7 +26,6 @@ import { ChroniclerUsageModal } from './components/done/utility/ChroniclerUsageM
 import { GoNuclearModal } from './components/done/utility/GoNuclearModal';
 import { WebDiskAutomountModal } from './components/done/utility/WebDiskAutomountModal';
 import { WebDiskMountModal } from './components/done/utility/WebDiskMountModal';
-import { AthenaeumScribeModal } from './components/done/utility/AthenaeumScribeModal';
 import { AthenaeumConcordanceModal } from './components/done/utility/AthenaeumConcordanceModal';
 import { AthenaeumSanctificationModal } from './components/done/utility/AthenaeumSanctificationModal';
 import { AthenaeumPathfindingModal } from './components/done/utility/AthenaeumPathfindingModal';
@@ -55,7 +54,6 @@ import { GitLfsSetupModal } from './components/utility/GitLfsSetupModal';
 import { GpgPersistenceModal } from './components/utility/GpgPersistenceModal';
 import { MakepkgAttunementModal } from './components/utility/MakepkgAttunementModal';
 import { FullForgePurificationModal } from './components/utility/FullForgePurificationModal';
-// FIX: Corrected import path for KaelicHardwareScryerModal. It seems to have been moved but the path was not updated.
 import { KaelicHardwareScryerModal } from './components/packages/KaelicHardwareScryerModal';
 import { CachyosRepairModal } from './components/utility/CachyosRepairModal';
 import { AthenaeumRepairModal } from './components/utility/AthenaeumRepairModal';
@@ -66,6 +64,8 @@ import { IndividualKernelForgeModal } from './components/packages/IndividualKern
 import { LastForgeLogModal } from './components/utility/LastForgeLogModal';
 import { AthenaeumPurificationModal } from './components/utility/AthenaeumPurificationModal';
 import { PersonalizedKernelForgeModal } from './components/packages/PersonalizedKernelForgeModal';
+import { KaelKhsPublisherModal } from './components/packages/KaelKhsPublisherModal';
+import { GrandConcordanceInstallerModal } from './components/utility/GrandConcordanceInstallerModal';
 
 
 const getModelNameFromBlueprint = (cloudCoreValue: string): string => {
@@ -223,18 +223,13 @@ export const App: React.FC = () => {
             }} />;
             case 'webDiskAutomount': return <WebDiskAutomountModal onClose={() => setActiveModal(null)} />;
             case 'webDiskMount': return <WebDiskMountModal onClose={() => setActiveModal(null)} />;
-            case 'athenaeumScribe': return <AthenaeumScribeModal onClose={() => setActiveModal(null)} />;
             case 'athenaeumConcordance': return <AthenaeumConcordanceModal onClose={() => setActiveModal(null)} />;
             case 'athenaeumSanctification': return <AthenaeumSanctificationModal onClose={() => setActiveModal(null)} />;
             case 'athenaeumPathfinding': return <AthenaeumPathfindingModal onClose={() => setActiveModal(null)} />;
             case 'webDiskAttunement': return <WebDiskAttunementModal onClose={() => setActiveModal(null)} />;
             case 'keyringAttunement': return <KeyringAttunementModal onClose={() => setActiveModal(null)} />;
-            case 'fullForgePurification': return <FullForgePurificationModal onClose={() => setActiveModal(null)} />;
-            case 'kaelicShell': return <KaelicShellPackageModal onClose={() => setActiveModal(null)} />;
-            case 'kaelicHardwareScryer': return <KaelicHardwareScryerModal onClose={() => setActiveModal(null)} />;
             case 'kaelCloudCore': return <KaelCloudCorePackageModal onClose={() => setActiveModal(null)} />;
             case 'kaelLocalCore': return <KaelLocalCorePackageModal onClose={() => setActiveModal(null)} />;
-            case 'cachyosRepair': return <CachyosRepairModal onClose={() => setActiveModal(null)} />;
             case 'grandArmoryForge': return <GrandArmoryForgeModal onClose={() => setActiveModal(null)} />;
 
 
@@ -246,6 +241,9 @@ export const App: React.FC = () => {
             // --- FORGE ---
             case 'keyBackup': return <KeyBackupModal onClose={() => setActiveModal(null)} />;
             case 'forgeSetup': return <ForgeSetupModal onClose={() => setActiveModal(null)} />;
+            case 'kaelicShell': return <KaelicShellPackageModal onClose={() => setActiveModal(null)} />;
+            case 'kaelicHardwareScryer': return <KaelicHardwareScryerModal onClose={() => setActiveModal(null)} />;
+            case 'cachyosRepair': return <CachyosRepairModal onClose={() => setActiveModal(null)} />;
             case 'kaelicTerminal': return <KaelicTerminalPackageModal onClose={() => setActiveModal(null)} />;
             case 'kaelicTerminalInstall': return <KaelicTerminalInstallModal onClose={() => setActiveModal(null)} />;
             case 'sovereignAssets': return <SovereignAssetsPackageModal onClose={() => setActiveModal(null)} />;
@@ -264,9 +262,12 @@ export const App: React.FC = () => {
             case 'athenaeumLfsRepair': return <AthenaeumLfsRepairModal onClose={() => setActiveModal(null)} />;
             case 'athenaeumFlattening': return <AthenaeumFlatteningModal onClose={() => setActiveModal(null)} />;
             case 'forgeReconciliation': return <ForgeReconciliationModal onClose={() => setActiveModal(null)} />;
+            case 'fullForgePurification': return <FullForgePurificationModal onClose={() => setActiveModal(null)} />;
             case 'athenaeumPurification': return <AthenaeumPurificationModal onClose={() => setActiveModal(null)} />;
             case 'lastForgeLog': return <LastForgeLogModal onClose={() => setActiveModal(null)} />;
             case 'personalizedKernelForge': return <PersonalizedKernelForgeModal onClose={() => setActiveModal(null)} />;
+            case 'kaelKhsPublisher': return <KaelKhsPublisherModal onClose={() => setActiveModal(null)} />;
+            case 'grandConcordanceInstaller': return <GrandConcordanceInstallerModal onClose={() => setActiveModal(null)} />;
 
 
             // --- LEGACY ---

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CloseIcon, SparklesIcon } from '../../core/Icons';
 import { CodeBlock } from '../../core/CodeBlock';
@@ -23,7 +22,7 @@ touch "\$ENV_FILE"
 
 # Logging function
 log() {
-    echo "[\$(date '+%Y-%m-%d %H:%M:%S')] \$1" >> "\$LOG_FILE"
+    echo "[\\\$(date '+%Y-%m-%d %H:%M:%S')] \$1" >> "\$LOG_FILE"
 }
 
 log "--- Session Started ---"
@@ -343,8 +342,7 @@ export const KaelAIConfiguratorPackageModal: React.FC<KaelAIConfiguratorPackageM
         .replace('${"DESKTOP_FILE_CONTENT"}', DESKTOP_FILE_CONTENT)
         .replace('${"PKGBUILD_CONTENT"}', PKGBUILD_CONTENT);
 
-    const encodedScript = btoa(unescape(encodeURIComponent(finalForgeScript)));
-    const finalForgeCommand = `echo "${encodedScript}" | base64 --decode | bash`;
+    const finalForgeCommand = `bash <<'EOF'\n${finalForgeScript}\nEOF`;
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>

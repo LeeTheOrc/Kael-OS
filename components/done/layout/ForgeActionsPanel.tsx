@@ -83,6 +83,8 @@ export const ForgeActionsPanel: React.FC<ForgeActionsPanelProps> = ({ activeMenu
                     {activeMenu === 'forge' && (
                         <>
                            <ActionSection title="Core Setup">
+                                <ActionButton title="Install/Update Grand Concordance" description="Installs the master scribe for publishing artifacts." icon={<BookOpenIcon className="w-5 h-5" />} onClick={() => onOpenModal('grandConcordanceInstaller')} colorClass="text-mythic-gold" />
+                                <ActionButton title="Seed of the Sentinel (v0.080)" description="One-time ritual to publish the canonical khs script." icon={<BookOpenIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelKhsPublisher')} />
                                 <ActionButton title="Install Forge Dependencies" description="Phase 1 & 2: Tools, Repos, and Assets." icon={<PackageIcon className="w-5 h-5" />} onClick={() => onOpenModal('forgeDependencies')} />
                                 <ActionButton title="Setup GPG Persistence" description="One-time setup for a persistent GPG agent." icon={<ShieldCheckIcon className="w-5 h-5" />} onClick={() => onOpenModal('gpgPersistence')} />
                                 <ActionButton title="Attune The Master Crafter" description="Enable multi-core compilation for makepkg." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('makepkgAttunement')} />
@@ -94,12 +96,11 @@ export const ForgeActionsPanel: React.FC<ForgeActionsPanelProps> = ({ activeMenu
                             </ActionSection>
                             
                             <ActionSection title="Sovereign Packages & Tools">
-                                <ActionButton title="Grand Concordance (Scribe)" description="Forge, Sign & Publish an artifact." icon={<BookOpenIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumScribe')} />
                                 <ActionButton title="Forge Sovereign Assets 0.00.01" description="Forge font and icon packs." icon={<PaintBrushIcon className="w-5 h-5" />} onClick={() => onOpenModal('sovereignAssets')} />
                                 <ActionButton title="Sovereign Kernel Forge" description="Forge a PGO/LTO optimized kernel." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('personalizedKernelForge')} />
                                 <ActionButton title={<span>Forge Single Kernel (Armory) <span className="text-xs text-dragon-fire/70">[HOST]</span></span>} description="Compile a specific, optimized kernel." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('individualKernelForge')} />
                                 <ActionButton title="Forge Kernel Governor v0.00.02" description="The self-managing kernel package." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('kernelGovernor')} />
-                                <ActionButton title="Forge Driver Sentinel v0.056" description="Auto-manage drivers & kernel." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelicHardwareScryer')} />
+                                <ActionButton title="Forge Driver Sentinel v0.081" description="Auto-manage drivers & kernel." icon={<CpuChipIcon className="w-5 h-5" />} onClick={() => onOpenModal('kaelicHardwareScryer')} />
                                 <ActionButton title="Forge Chronicler 0.00.01" description="Build the file backup & log utility." icon={<CubeIcon className="w-5 h-5" />} onClick={() => onOpenModal('chroniclerPackage')} />
                             </ActionSection>
 
@@ -149,7 +150,6 @@ export const ForgeActionsPanel: React.FC<ForgeActionsPanelProps> = ({ activeMenu
                                 <ActionButton title="Setup Local Forge" description="Create ~/forge and clone repositories." icon={<ComputerDesktopIcon className="w-5 h-5" />} onClick={() => onOpenModal('forgeSetup')} colorClass="text-forge-text-secondary" />
                                 <ActionButton title="Automount WebDisk" description="Set up automatic, persistent WebDisk." icon={<ServerIcon className="w-5 h-5" />} onClick={() => onOpenModal('webDiskAutomount')} colorClass="text-forge-text-secondary" />
                                 <ActionButton title="Attune GPG Keyring" description="Make pacman trust your signing key." icon={<KeyIcon className="w-5 h-5" />} onClick={() => onOpenModal('keyringAttunement')} colorClass="text-forge-text-secondary" />
-                                <ActionButton title="Athenaeum Concordance" description="Manually sync all repositories." icon={<SignalIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumConcordance')} colorClass="text-forge-text-secondary" />
                                 <ActionButton title="WebDisk Forge Sync" description="Sync entire forge to WebDisk." icon={<DocumentDuplicateIcon className="w-5 h-5" />} onClick={() => onOpenModal('webDiskMount')} colorClass="text-forge-text-secondary" />
                                 <ActionButton title="Sanctify Athenaeum" description="Force-create local repo DB." icon={<ShieldCheckIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumSanctification')} colorClass="text-forge-text-secondary" />
                                 <ActionButton title="Configure Build Paths" description="Optimize makepkg to use ~/forge." icon={<FolderIcon className="w-5 h-5" />} onClick={() => onOpenModal('athenaeumPathfinding')} colorClass="text-forge-text-secondary" />

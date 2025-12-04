@@ -15,7 +15,7 @@ export type ModalType =
   | 'webDiskMount' | 'webDiskAutomount'
   | 'kaelCloudCore' | 'kaelLocalCore' | 'kaelicShell' | 'kaelAIConfigurator'
   | 'forgeSetup' | 'athenaeumPathfinding' | 'athenaeumSanctification'
-  | 'athenaeumScribe' | 'athenaeumConcordance' | 'webDiskAttunement' | 'keyringAttunement'
+  | 'athenaeumConcordance' | 'webDiskAttunement' | 'keyringAttunement'
   | 'kaelicHardwareScryer' | 'kaelicTerminal' | 'kaelicTerminalInstall' | 'sovereignAssets'
   | 'kaelicTerminalDesktopEntry'
   | 'fullForgePurification' | 'forgeReconciliation'
@@ -32,4 +32,6 @@ export type ModalType =
   | 'athenaeumPurification'
   | 'lastForgeLog'
   | 'personalizedKernelForge'
+  | 'kaelKhsPublisher'
+  | 'grandConcordanceInstaller'
   | null;

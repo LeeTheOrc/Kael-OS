@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CloseIcon, FlameIcon } from '../core/Icons';
 import { CodeBlock } from '../core/CodeBlock';
@@ -120,7 +119,7 @@ echo "   It is recommended to run 'sudo pacman -Syyu' to refresh your repositori
 `;
 
 export const FullForgePurificationModal: React.FC<FullForgePurificationModalProps> = ({ onClose }) => {
-    const finalCommand = `echo "${btoa(unescape(encodeURIComponent(PURGE_SCRIPT_RAW)))}" | base64 --decode | sudo bash`;
+    const finalCommand = `sudo bash <<'EOF'\n${PURGE_SCRIPT_RAW}\nEOF`;
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
