@@ -7,32 +7,32 @@ interface ForgeDependenciesModalProps {
   onClose: () => void;
 }
 
-// --- PHASE 1: THE FOUNDATION (v2.7 - The Final Pact) ---
+// --- PHASE 1: THE FOUNDATION (v3.3 - The Raw Pact) ---
 const PHASE_1_SCRIPT = `#!/bin/bash
 set -euo pipefail
 
-echo "--- Forge Dependencies Phase 1: The Foundation v2.7 (The Final Pact) ---"
+echo "--- Forge Dependencies Phase 1: The Foundation v3.3 (The Raw Pact) ---"
 echo "Target: Config Purification, Keyring Refresh, Standard Tools, Chaotic-AUR."
 
 # --- [1/5] THE FINAL PACT (Purification) ---
 echo ""
 echo "--> [1/5] Invoking The Final Pact to purify pacman configuration..."
 BACKUP_FILE="/etc/pacman.conf.kael-deps.bak"
-if [ ! -f "\\$BACKUP_FILE" ]; then
-    sudo cp /etc/pacman.conf "\\$BACKUP_FILE"
+if [ ! -f "\${BACKUP_FILE}" ]; then
+    sudo cp /etc/pacman.conf "\${BACKUP_FILE}"
 fi
 
-TMP_CLEAN=\\$(mktemp)
+TMP_CLEAN=\$(mktemp)
 # This awk script removes known-bad diagnostic lines AND all [kael-os*] sections.
 # It is more robust by not relying on start-of-line anchors.
 awk '
     /-> Sanctified/ { next }
-    /^\\[kael-os/ { in_section=1; next }
-    /^\\[/ { in_section=0 }
+    /^\\\\[kael-os/ { in_section=1; next }
+    /^\\\\[/ { in_section=0 }
     !in_section { print }
-' "/etc/pacman.conf" > "\\$TMP_CLEAN"
-sudo cp "\\$TMP_CLEAN" /etc/pacman.conf
-rm "\\$TMP_CLEAN"
+' "/etc/pacman.conf" > "\${TMP_CLEAN}"
+sudo cp "\${TMP_CLEAN}" /etc/pacman.conf
+rm "\${TMP_CLEAN}"
 echo "✅ pacman.conf purified."
 
 # --- [2/5] KEYRING REFRESH & BOOTSTRAP ---
@@ -85,31 +85,31 @@ echo ""
 echo "✨ Phase 1 Complete! Your system has all tools required to Forge."
 `;
 
-// --- PHASE 2: THE ATTUNEMENT (v3.2 - The Unifying Pact) ---
+// --- PHASE 2: THE ATTUNEMENT (v3.3 - The Raw Pact) ---
 const PHASE_2_SCRIPT = `#!/bin/bash
 set -euo pipefail
 
-echo "--- Forge Dependencies Phase 2: The Attunement v3.2 (The Unifying Pact) ---"
+echo "--- Forge Dependencies Phase 2: The Attunement v3.3 (The Raw Pact) ---"
 echo "Target: Kael OS Repositories (Online-Only), GPG Trust, Sovereign Assets."
 
 # --- [1/5] THE FINAL PACT (Purification) ---
 echo ""
 echo "--> [1/5] Invoking The Final Pact to ensure a clean slate..."
 BACKUP_FILE="/etc/pacman.conf.kael-attune.bak"
-if [ ! -f "\\$BACKUP_FILE" ]; then
-    sudo cp /etc/pacman.conf "\\$BACKUP_FILE"
+if [ ! -f "\${BACKUP_FILE}" ]; then
+    sudo cp /etc/pacman.conf "\${BACKUP_FILE}"
 fi
 
-TMP_CLEAN=\\$(mktemp)
+TMP_CLEAN=\$(mktemp)
 # This awk script removes known-bad diagnostic lines AND all [kael-os*] sections.
 awk '
     /-> Sanctified/ { next }
-    /^\\[kael-os/ { in_section=1; next }
-    /^\\[/ { in_section=0 }
+    /^\\\\[kael-os/ { in_section=1; next }
+    /^\\\\[/ { in_section=0 }
     !in_section { print }
-' "/etc/pacman.conf" > "\\$TMP_CLEAN"
-sudo cp "\\$TMP_CLEAN" /etc/pacman.conf
-rm "\\$TMP_CLEAN"
+' "/etc/pacman.conf" > "\${TMP_CLEAN}"
+sudo cp "\${TMP_CLEAN}" /etc/pacman.conf
+rm "\${TMP_CLEAN}"
 echo "✅ pacman.conf purified."
 
 
@@ -139,12 +139,12 @@ echo "--> [3/5] Attuning to Kael OS Athenaeum..." >&2
 if ! sudo pacman-key --list-keys "LeeTheOrc" >/dev/null 2>&1; then
     echo "    -> Trusting Kael OS master key..." >&2
     KEY_URL="https://raw.githubusercontent.com/LeeTheOrc/kael-os-repo/gh-pages/kael-os.asc"
-    TEMP_KEY_FILE=\\$(mktemp)
-    curl -fsSL "\\$KEY_URL" -o "\\$TEMP_KEY_FILE"
-    KEY_ID=\\$(gpg --show-keys --with-colons "\\$TEMP_KEY_FILE" 2>/dev/null | grep '^pub' | cut -d: -f5)
-    sudo pacman-key --add "\\$TEMP_KEY_FILE"
-    sudo pacman-key --lsign-key "\\$KEY_ID"
-    rm "\\$TEMP_KEY_FILE"
+    TEMP_KEY_FILE=\$(mktemp)
+    curl -fsSL "\${KEY_URL}" -o "\${TEMP_KEY_FILE}"
+    KEY_ID=\$(gpg --show-keys --with-colons "\${TEMP_KEY_FILE}" 2>/dev/null | grep '^pub' | cut -d: -f5)
+    sudo pacman-key --add "\${TEMP_KEY_FILE}"
+    sudo pacman-key --lsign-key "\${KEY_ID}"
+    rm "\${TEMP_KEY_FILE}"
     echo "    ✅ Master key trusted." >&2
 fi
 
@@ -196,7 +196,7 @@ export const ForgeDependenciesModal: React.FC<ForgeDependenciesModalProps> = ({ 
                 <div className="flex justify-between items-center mb-4 flex-shrink-0">
                      <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
                         <PackageIcon className="w-5 h-5 text-dragon-fire" />
-                        <span>Install Forge Dependencies (v3.2 - The Unifying Pact)</span>
+                        <span>Install Forge Dependencies (v3.3 - The Raw Pact)</span>
                     </h2>
                     <button onClick={onClose} className="text-forge-text-secondary hover:text-forge-text-primary">
                         <CloseIcon className="w-5 h-5" />
@@ -208,13 +208,13 @@ export const ForgeDependenciesModal: React.FC<ForgeDependenciesModalProps> = ({ 
                         onClick={() => setActiveTab('phase1')}
                         className={`pb-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === 'phase1' ? 'border-dragon-fire text-dragon-fire' : 'border-transparent text-forge-text-secondary hover:text-forge-text-primary'}`}
                     >
-                        Phase 1: Foundation
+                        Phase 1: Foundation (v3.3)
                     </button>
                     <button 
                         onClick={() => setActiveTab('phase2')}
                         className={`pb-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === 'phase2' ? 'border-orc-steel text-orc-steel' : 'border-transparent text-forge-text-secondary hover:text-forge-text-primary'}`}
                     >
-                        Phase 2: Attunement (v3.2)
+                        Phase 2: Attunement (v3.3)
                     </button>
                 </div>
 
@@ -225,7 +225,7 @@ export const ForgeDependenciesModal: React.FC<ForgeDependenciesModalProps> = ({ 
                                 <strong className="text-dragon-fire">The Foundation:</strong> This ritual prepares a raw system. It installs standard build tools and sets up the <strong className="text-forge-text-primary">Chaotic-AUR</strong>.
                             </p>
                             <div className="text-sm p-3 bg-dragon-fire/10 border-l-4 border-dragon-fire rounded">
-                                <strong className="text-dragon-fire">Update v2.7 (The Final Pact):</strong> This phase begins by aggressively purifying <code className="font-mono text-xs">pacman.conf</code> of all known corruption and Kael OS entries. This guarantees a clean slate.
+                                <strong className="text-dragon-fire">Update v3.3 (The Raw Pact):</strong> The incantation is now scribed using a more resilient method to prevent shell syntax errors.
                             </div>
                             <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">Phase 1 Incantation</h3>
                             <CodeBlock lang="bash">{cmd1}</CodeBlock>
@@ -238,8 +238,8 @@ export const ForgeDependenciesModal: React.FC<ForgeDependenciesModalProps> = ({ 
                                 <strong className="text-orc-steel">The Attunement:</strong> This ritual connects your system to the <strong className="text-forge-text-primary">Kael OS Athenaeum</strong>.
                             </p>
                             <div className="text-sm p-3 bg-orc-steel/10 border-l-4 border-orc-steel rounded space-y-2">
-                                <strong className="text-orc-steel">Update v3.2 (The Unifying Pact):</strong>
-                                <p>This ritual's logic is now unified with the 'Reconcile Repositories' ritual. It correctly configures pacman with the <code className="font-mono text-xs">[kael-os-repo]</code> section and direct server URLs, finally resolving the 404 errors.</p>
+                                <strong className="text-orc-steel">Update v3.3 (The Raw Pact):</strong>
+                                <p>This ritual's logic is unified with 'Reconcile Repositories' and now uses a resilient scribing method to prevent shell errors.</p>
                             </div>
                             <h3 className="font-semibold text-lg text-orc-steel mt-4 mb-2">Phase 2 Incantation</h3>
                             <CodeBlock lang="bash">{cmd2}</CodeBlock>

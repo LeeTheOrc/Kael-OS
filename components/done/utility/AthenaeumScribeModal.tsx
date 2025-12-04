@@ -22,7 +22,7 @@ fi
 echo "--- Grand Concordance Ritual 0.00.11 (The True Name Pact) ---"
 
 # --- [1/7] ENVIRONMENT DETECTION ---
-USER_HOME=$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
+USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}")
 
 if [ -d "\$USER_HOME/host_forge" ]; then
     echo "--> 🔮 VM Environment Detected."
@@ -46,7 +46,7 @@ trap cleanup EXIT SIGINT SIGTERM
 
 # --- [3/7] WAKING THE GPG AGENT ---
 echo "--> [3/7] Waking the GPG Agent..."
-export GPG_TTY=$(tty <&1)
+export GPG_TTY=\$(tty <&1)
 gpg-connect-agent updatestartuptty /bye >/dev/null || true
 if ! echo "test" | gpg --clearsign >/dev/null 2>&1; then
     echo "⚠️  GPG test signature failed. Please run the 'GPG Key Awakening' ritual if this fails."
@@ -178,7 +178,7 @@ chmod +x /tmp/grand-concordance
 sudo mv /tmp/grand-concordance /usr/local/bin/grand-concordance
 
 # 3. Deploy to Shared Forge (for VM Access)
-USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
+USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}")
 SHARED_SCRIPT="\${USER_HOME}/forge/grand-concordance.sh"
 
 if [ -d "\${USER_HOME}/forge" ]; then

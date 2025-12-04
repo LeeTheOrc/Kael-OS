@@ -77,16 +77,16 @@ echo "--> [2/5] Attuning blueprint with The Phoenix Pact..."
 
     # 3. Atomically modify main package function
     perl -i -p0e '
-        my \\$pkg_name_sanitized = "'"\${PKG_NAME_SANITIZED}"'";
-        my \\$base = "'"\${KERNEL_BASE}"'";
-        s/(package_)\\Q\${base}\\E(\\(\\)\\s*\\{)([\\s\\S]*?)(^\\})/\\$1 . \\$pkg_name_sanitized . \\$2 . "  provides=(\\x27\${base}\\x27)\\n  conflicts=(\\x27\${base}\\x27)\\n  replaces=(\\x27\${base}\\x27)\\n" . do { my \\$s = \\$3; \\$s =~ s!^[ \t]*(provides|conflicts|replaces)=\\([\\s\\S]*?\\)!!gm; \\$s } . \\$4/gem;
+        my \$pkg_name_sanitized = "'"\${PKG_NAME_SANITIZED}"'";
+        my \$base = "'"\${KERNEL_BASE}"'";
+        s/(package_)\\Q\${base}\\E(\\(\\)\\s*\\{)([\\s\\S]*?)(^\\})/\\$1 . \$pkg_name_sanitized . \\$2 . "  provides=(\\x27\${base}\\x27)\\n  conflicts=(\\x27\${base}\\x27)\\n  replaces=(\\x27\${base}\\x27)\\n" . do { my \$s = \$3; \$s =~ s!^[ \t]*(provides|conflicts|replaces)=\\([\\s\\S]*?\\)!!gm; \$s } . \$4/gem;
     ' PKGBUILD
     
     # 4. Atomically modify headers package function
     perl -i -p0e '
-        my \\$pkg_name_sanitized = "'"\${PKG_NAME_SANITIZED}"'";
-        my \\$base = "'"\${KERNEL_BASE}"'";
-        s/(package_)\\Q\${base}\\E-headers(\\(\\)\\s*\\{)([\\s\\S]*?)(^\\})/\\$1 . \\$pkg_name_sanitized . "-headers" . \\$2 . "  provides=(\\x27\${base}-headers\\x27)\\n  conflicts=(\\x27\${base}-headers\\x27)\\n  replaces=(\\x27\${base}-headers\\x27)\\n" . do { my \\$s = \\$3; \\$s =~ s!^[ \t]*(provides|conflicts|replaces)=\\([\\s\\S]*?\\)!!gm; \\$s } . \\$4/gem;
+        my \$pkg_name_sanitized = "'"\${PKG_NAME_SANITIZED}"'";
+        my \$base = "'"\${KERNEL_BASE}"'";
+        s/(package_)\\Q\${base}\\E-headers(\\(\\)\\s*\\{)([\\s\\S]*?)(^\\})/\\$1 . \$pkg_name_sanitized . "-headers" . \\$2 . "  provides=(\\x27\${base}-headers\\x27)\\n  conflicts=(\\x27\${base}-headers\\x27)\\n  replaces=(\\x27\${base}-headers\\x27)\\n" . do { my \$s = \$3; \$s =~ s!^[ \t]*(provides|conflicts|replaces)=\\([\\s\\S]*?\\)!!gm; \$s } . \$4/gem;
     ' PKGBUILD
 
     # 5. Inject compiler flags

@@ -47,9 +47,8 @@ WantedBy=timers.target
 
 
     const commonSetup = `#!/bin/bash
-(
 set -euo pipefail
-export USER_HOME=$(getent passwd "\\\${SUDO_USER:-\$USER}" | cut -d: -f6)
+export USER_HOME=$(getent passwd "\\\${SUDO_USER:-\\\$USER}" | cut -d: -f6)
 export FORGE_BASE="\\\${USER_HOME}/forge"
 export PKG_DIR="\\\${FORGE_BASE}/packages/kaelic-kernel-sovereign-${source}"
 export REPO_URL="https://github.com/archlinux/svntogit-packages.git"
@@ -89,7 +88,6 @@ sed -i "/^build() {/a \\
 sed -i "/^prepare() {/a \\    sed -i -e '/CONFIG_HZ_250=y/d' -e '/# CONFIG_HZ_1000 is not set/d' .config\\n    echo 'CONFIG_HZ_1000=y' >> .config" PKGBUILD
 sed -i "s/pkgname=.*/pkgname=kaelic-kernel-sovereign-${source}-pgo-instrumented/" PKGBUILD
 echo "✅ Blueprint is ready. Proceed to 'The Tempering'."
-)
 `;
     }
 
@@ -111,7 +109,6 @@ if [ -n "\$INSTRUMENTED_ENTRY" ]; then
 else
     echo "⚠️  Could not find the instrumented kernel in GRUB. Please select it manually on reboot."
 fi
-)
 `;
     }
 
@@ -198,11 +195,15 @@ khs --scry-drivers
 khs --attune-bootloader
 
 echo "✅ Honed kernel forged, published, installed, and attuned!"
-)
 `;
     }
     return "# Invalid Step";
 };
+
+const wrapInBash = (script: string) => `bash -c "$(cat <<'EOF'
+${script.trim()}
+EOF
+)"`;
 
 export const PersonalizedKernelForgeModal: React.FC<PersonalizedKernelForgeModalProps> = ({ onClose }) => {
     const [activeBlade, setActiveBlade] = useState<KernelBlade>('work');
@@ -265,7 +266,7 @@ export const PersonalizedKernelForgeModal: React.FC<PersonalizedKernelForgeModal
                                    Note: The <code className="font-mono text-dragon-fire">--temper-work</code> command now uses <code className="font-mono text-dragon-fire">stress-ng</code> to generate a more versatile, general-purpose profile suitable for mixed workloads.
                                 </div>
                              }
-                             <CodeBlock lang="bash">{generateScript(activeBlade, step.id)}</CodeBlock>
+                             <CodeBlock lang="bash">{wrapInBash(generateScript(activeBlade, step.id))}</CodeBlock>
                         </div>
                     ))}
                      <div className="text-xs p-3 bg-red-900/20 border-l-4 border-red-500/70 rounded mt-4">

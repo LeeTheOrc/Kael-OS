@@ -14,7 +14,7 @@ set -euo pipefail
 echo "--- The Dragon's Breath Forge - Step 1/6: Summoning Kernel Sources (The Adamant Pact) ---"
 echo ""
 
-export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
+export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}")
 export ARMORY_FORGE="\${USER_HOME}/forge/packages/kael-kernel-armory"
 export KERNEL_BASES="linux linux-lts linux-zen"
 export KERNEL_SOURCE_CACHE="\${ARMORY_FORGE}/source_cache"
@@ -66,7 +66,7 @@ set -euo pipefail
 echo "--- The Dragon's Breath Forge - Step 2/6: Scribing Blueprints (The Adamant Pact) ---"
 echo ""
 
-export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
+export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}")
 export ARMORY_FORGE="\${USER_HOME}/forge/packages/kael-kernel-armory"
 export TARGET_ARCHS="x86-64-v2 x86-64-v3 x86-64-v4 znver4 znver5"
 export KERNEL_BASES="linux linux-lts linux-zen"
@@ -103,7 +103,7 @@ set -euo pipefail
 echo "--- The Dragon's Breath Forge - Step 3/6: Attuning Blueprints (The Adamant Pact) ---"
 echo ""
 
-export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
+export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}")
 export ARMORY_FORGE="\${USER_HOME}/forge/packages/kael-kernel-armory"
 export TARGET_ARCHS="x86-64-v2 x86-64-v3 x86-64-v4 znver4 znver5"
 export KERNEL_BASES="linux linux-lts linux-zen"
@@ -133,17 +133,16 @@ for base in \${KERNEL_BASES}; do
             sed -i "s/^pkgbase=.*/pkgbase='\${_pkg_name}'/" PKGBUILD
 
             # 3. Inject provides/conflicts/replaces (The Adamant Pact)
-            # FIX: Replaced faulty sed with robust perl commands to atomically modify package functions.
             perl -i -p0e '
-                my \\$pkg_name = "'"\${_pkg_name}"'";
-                my \\$base_name = "'"\${base}"'";
-                s/(package_)\\Q\$base_name\\E(\\(\\)\\s*\\{)([\\s\\S]*?)(^\\})/\\$1 . \\$pkg_name . \\$2 . "  provides=(\\x27\$base_name\\x27)\\n  conflicts=(\\x27\$base_name\\x27)\\n  replaces=(\\x27\$base_name\\x27)\\n" . do { my \\$s = \\$3; \\$s =~ s!^[ \t]*(provides|conflicts|replaces)=\\([\\s\\S]*?\\)!!gm; \\$s } . \\$4/gem;
+                my \$pkg_name = "'\${_pkg_name}'";
+                my \$base_name = "'\${base}'";
+                s/(package_)\\Q\$base_name\\E(\\(\\)\\s*\\{)([\\s\\S]*?)(^\\})/\\$1 . \$pkg_name . \\$2 . "  provides=(\\x27\$base_name\\x27)\\n  conflicts=(\\x27\$base_name\\x27)\\n  replaces=(\\x27\$base_name\\x27)\\n" . do { my \$s = \$3; \$s =~ s!^[ \t]*(provides|conflicts|replaces)=\\([\\s\\S]*?\\)!!gm; \$s } . \$4/gem;
             ' PKGBUILD
             
             perl -i -p0e '
-                my \\$pkg_name = "'"\${_pkg_name}"'";
-                my \\$base_name = "'"\${base}"'";
-                s/(package_)\\Q\$base_name\\E-headers(\\(\\)\\s*\\{)([\\s\\S]*?)(^\\})/\\$1 . \\$pkg_name . "-headers" . \\$2 . "  provides=(\\x27\$base_name-headers\\x27)\\n  conflicts=(\\x27\$base_name-headers\\x27)\\n  replaces=(\\x27\$base_name-headers\\x27)\\n" . do { my \\$s = \\$3; \\$s =~ s!^[ \t]*(provides|conflicts|replaces)=\\([\\s\\S]*?\\)!!gm; \\$s } . \\$4/gem;
+                my \$pkg_name = "'\${_pkg_name}'";
+                my \$base_name = "'\${base}'";
+                s/(package_)\\Q\$base_name\\E-headers(\\(\\)\\s*\\{)([\\s\\S]*?)(^\\})/\\$1 . \$pkg_name . "-headers" . \\$2 . "  provides=(\\x27\$base_name-headers\\x27)\\n  conflicts=(\\x27\$base_name-headers\\x27)\\n  replaces=(\\x27\$base_name-headers\\x27)\\n" . do { my \$s = \$3; \$s =~ s!^[ \t]*(provides|conflicts|replaces)=\\([\\s\\S]*?\\)!!gm; \$s } . \$4/gem;
             ' PKGBUILD
 
             # 4. Inject compiler flags
@@ -168,7 +167,7 @@ set -euo pipefail
 echo "--- The Dragon's Breath Forge - Step 4/6: The Long Ritual (The Adamant Pact) ---"
 echo ""
 
-export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
+export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}")
 export ARMORY_FORGE="\${USER_HOME}/forge/packages/kael-kernel-armory"
 
 # The Armorer's Gambit: Instead of recalculating every path (which was failing),
@@ -192,7 +191,7 @@ set -euo pipefail
 echo "--- The Dragon's Breath Forge - Step 5/6: Local Concordance (The Artificer's Pact) ---"
 echo ""
 
-export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
+export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}")
 export ARTIFACTS_PATH="\${USER_HOME}/forge/artifacts"
 export LOCAL_REPO_PATH="\${USER_HOME}/forge/repo"
 
@@ -237,7 +236,7 @@ echo "This ritual synchronizes the entire local Athenaeum to all remote mirrors.
 echo ""
 
 # --- [1/4] PREPARATION ---
-export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}" | cut -d: -f6)
+export USER_HOME=\$(getent passwd "\${SUDO_USER:-\$USER}")
 LOCAL_REPO_PATH="\$USER_HOME/forge/repo"
 # The Solid Ground Pact: Use a persistent directory to avoid /tmp space issues with LFS
 GH_CLONE_DIR="\$USER_HOME/forge/repo_src_lfs"
@@ -350,7 +349,7 @@ export const GrandArmoryForgeModal: React.FC<GrandArmoryForgeModalProps> = ({ on
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center animate-fade-in-fast" onClick={onClose}>
-            <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-4xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={onClose}>
+            <div className="bg-forge-panel border-2 border-forge-border rounded-lg shadow-2xl w-full max-w-4xl p-6 m-4 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                 <header className="flex justify-between items-center mb-4 flex-shrink-0">
                      <h2 className="text-xl font-bold text-forge-text-primary flex items-center gap-2 font-display tracking-wider">
                         <CpuChipIcon className="w-5 h-5 text-dragon-fire" />
