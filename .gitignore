@@ -1,0 +1,8 @@
+node_modules/
+target/
+dist/
+*.pdb
+.DS_Store
+.env
+.env.local
+.vscode/settings.json
