@@ -1,6 +1,7 @@
 use crate::state::{ChatMessage, KaelConfig};
 use crate::webdav::{WebDavClient, WebDavConfig};
 use crate::version::Version;
+use crate::app_scaffold::AppTemplate;
 use std::path::Path;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
@@ -292,5 +293,22 @@ pub fn bump_version(stage: String) -> Result<String, String> {
     std::fs::write(version_path, json).map_err(|e| e.to_string())?;
 
     Ok(version.to_string())
+}
+
+/// Scaffold a new app with versioning system built-in
+#[tauri::command]
+pub fn scaffold_app(
+    app_name: String,
+    app_path: String,
+    description: String,
+) -> Result<String, String> {
+    let path = std::path::Path::new(&app_path);
+    AppTemplate::scaffold(&app_name, path, &description)
+        .map_err(|e| format!("Failed to scaffold app: {}", e))?;
+    
+    Ok(format!(
+        "App '{}' scaffolded at {} with versioning system v0.0.1-alpha.1",
+        app_name, app_path
+    ))
 }
 

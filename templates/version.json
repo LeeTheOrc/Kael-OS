@@ -1,0 +1,9 @@
+{
+  "major": 0,
+  "minor": 0,
+  "patch": 1,
+  "stage": "alpha",
+  "build": 1,
+  "timestamp": "{{TIMESTAMP}}",
+  "description": "Initial alpha release of {{APP_NAME}}"
+}

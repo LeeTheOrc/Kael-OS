@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Version bump utility with semantic versioning and strict alpha→beta→release flow
+# Version bump utility for {{APP_NAME}}
+# Strict semantic versioning: v0.0.1-alpha → v0.1.0-beta → v1.0.0-release
 # Usage: bash scripts/bump-version.sh [alpha|beta|release]
 
 VERSION_FILE="version.json"
@@ -28,11 +29,9 @@ BUILD=$(jq -r '.build' "$VERSION_FILE")
 # Increment based on stage transition
 case "$CURRENT_STAGE:$STAGE" in
   alpha:alpha)
-    # Stay in alpha, increment build
     BUILD=$((BUILD + 1))
     ;;
   alpha:beta|beta:beta)
-    # Move to or stay in beta
     if [[ "$CURRENT_STAGE" == "alpha" ]]; then
       MINOR=$((MINOR + 1))
       PATCH=0
@@ -42,7 +41,6 @@ case "$CURRENT_STAGE:$STAGE" in
     fi
     ;;
   beta:release|release:release|alpha:release)
-    # Move to release or stay in release
     if [[ "$CURRENT_STAGE" != "release" ]]; then
       MAJOR=$((MAJOR + 1))
       MINOR=0
@@ -73,11 +71,5 @@ jq --arg major "$MAJOR" \
    '.major = ($major | tonumber) | .minor = ($minor | tonumber) | .patch = ($patch | tonumber) | .stage = $stage | .build = ($build | tonumber) | .timestamp = $ts' \
    "$VERSION_FILE" > "$VERSION_FILE.tmp" && mv "$VERSION_FILE.tmp" "$VERSION_FILE"
 
-# Update Cargo.toml in src-tauri if present (for Rust projects)
-if [[ -f "src-tauri/Cargo.toml" ]]; then
-  sed -i "s/^version = .*/version = \"$VERSION\"/" src-tauri/Cargo.toml
-fi
-
 echo "✓ Bumped to v${VERSION}-${STAGE}.${BUILD} (timestamp: $TIMESTAMP)"
-echo "Current version.json:"
 cat "$VERSION_FILE" | jq .

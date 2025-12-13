@@ -1,3 +1,4 @@
+mod app_scaffold;
 mod auth;
 mod commands;
 mod components;
