@@ -32,12 +32,14 @@
 ## 📦 Mirror Distribution Strategy
 
 ### Primary Mirrors (in priority order):
+
 1. **GitHub Releases** (kael-os releases, built-in CDN)
 2. **Firebase Hosting** (cloud-native, real-time sync)
 3. **cPanel Web Hosting** (your.domain.com, Let's Encrypt SSL, webdisk)
 4. **Google Cloud Storage** (Arch AUR mirror fallback)
 
 ### Mirror URLs:
+
 ```
 Primary:   https://github.com/LeeTheOrc/kael-os/releases/download/v{version}/
 Secondary: https://kael-os.web.app/releases/v{version}/
@@ -46,6 +48,7 @@ Fallback:  https://storage.googleapis.com/kael-os-releases/v{version}/
 ```
 
 ### Repository Mirrors (Arch Packages):
+
 ```
 [core]
 Server = https://github.com/LeeTheOrc/kael-os-repo/releases/download/core/$arch
@@ -61,18 +64,22 @@ Server = https://yourdomain.com/repos/extra/$arch
 ## 🔐 SSL/TLS Configuration
 
 ### Your Current Setup:
+
 - ✅ Let's Encrypt SSL on cPanel (yourdomain.com)
 - ✅ Firebase Hosting SSL (kael-os.web.app) - automatic
 - ✅ GitHub HTTPS - automatic
 - ✅ Google Cloud HTTPS - automatic
 
 ### Implementation Steps:
+
 1. Generate certificate pinning for Let's Encrypt:
+
    ```bash
    openssl x509 -in /path/to/cert.pem -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64
    ```
 
 2. Add to app config:
+
    ```rust
    const PINNED_CERTIFICATES: &[&str] = &[
        // yourdomain.com Let's Encrypt cert
@@ -92,24 +99,28 @@ Server = https://yourdomain.com/repos/extra/$arch
 ## 📱 Platform-Specific Distribution
 
 ### Windows
+
 - **Format**: `.msi` (Windows Installer)
 - **Distribution**: GitHub Releases + cPanel webdisk
 - **Auto-Update**: Check `https://yourdomain.com/kael-os/version.json`
 - **Install Location**: `C:\Program Files\Kael-OS`
 
 ### Linux
+
 - **Format**: `.AppImage` (portable) + `.rpm` (Fedora) + `.deb` (Debian)
 - **Distribution**: GitHub Releases + Arch AUR
 - **Auto-Update**: `pacman -S kael-os` (from your repos)
 - **Install Location**: `/usr/local/bin/kael-os` or `~/.local/bin/kael-os`
 
 ### macOS
+
 - **Format**: `.dmg` (disk image)
 - **Distribution**: GitHub Releases + Homebrew tap
 - **Auto-Update**: `brew upgrade kael-os`
 - **Install Location**: `/Applications/Kael-OS.app`
 
 ### Android
+
 - **Format**: `.apk` (sideload) / `.aab` (Google Play)
 - **Distribution**: Firebase App Distribution + GitHub Releases
 - **Framework**: React Native or Flutter (TBD)
@@ -118,6 +129,7 @@ Server = https://yourdomain.com/repos/extra/$arch
 ## 🚀 Auto-Update Mechanism
 
 ### Version Manifest (stored on all mirrors):
+
 ```json
 {
   "version": "0.2.0",
@@ -144,6 +156,7 @@ Server = https://yourdomain.com/repos/extra/$arch
 ```
 
 ### App Update Flow:
+
 1. App checks version on startup (async, non-blocking)
 2. Compares local version vs. remote manifest
 3. If newer available:
@@ -157,6 +170,7 @@ Server = https://yourdomain.com/repos/extra/$arch
    - Restart app
 
 ### Update Server Endpoints:
+
 ```
 GET /api/update/check?platform=linux&arch=x86_64&version=0.1.0
 → Returns: { newer: true, version: "0.2.0", manifest_url: "..." }
@@ -171,6 +185,7 @@ GET /releases/{version}/{filename}
 ## 🔄 Repository Mirroring System
 
 ### Repo Structure (3 mirrors):
+
 ```
 GitHub (repo server):
   releases/
@@ -195,6 +210,7 @@ cPanel webdisk:
 ```
 
 ### Auto-Sync Workflow (when you add new package):
+
 1. Run: `makepkg -si --sign` (signs with your GPG key)
 2. Run: `repo-add --sign /srv/repo/core/os/x86_64/core.db.tar.gz pkg.tar.zst`
 3. GitHub Actions workflow:
@@ -206,24 +222,28 @@ cPanel webdisk:
 ## 🛠️ Implementation Plan
 
 ### Phase 1: Auto-Update (Week 1-2)
+
 - [ ] Create version manifest API
 - [ ] Implement update checker in app
 - [ ] Add download manager with fallback mirrors
 - [ ] Package installers for Windows/Linux/macOS
 
 ### Phase 2: Repository Mirroring (Week 3-4)
+
 - [ ] Setup GitHub repo mirror
 - [ ] Configure Firebase Hosting
 - [ ] Create cPanel sync script
 - [ ] Generate and pin SSL certificates
 
 ### Phase 3: Android Port (Week 5+)
+
 - [ ] Choose framework (React Native or Flutter)
 - [ ] Port Dioxus UI to platform
 - [ ] Implement Firebase sync
 - [ ] Build APK/AAB distribution
 
 ### Phase 4: CI/CD Automation (Ongoing)
+
 - [ ] GitHub Actions for releases
 - [ ] Automated installer builds
 - [ ] Mirror sync on schedule
@@ -232,6 +252,7 @@ cPanel webdisk:
 ## 📋 Configuration Files
 
 ### .env.local (app config):
+
 ```env
 # Update Server
 UPDATE_SERVER=https://yourdomain.com/api/update
@@ -257,6 +278,7 @@ VERSION=0.1.0
 ```
 
 ### pacman.conf (for users):
+
 ```ini
 [core]
 SigLevel = Required DatabaseNever
@@ -273,6 +295,7 @@ Server = https://yourdomain.com/repos/extra/$arch
 ## 🔗 User Installation Flow
 
 ### First-Time User (Windows/Linux/macOS):
+
 1. Download installer from https://kael-os.com (or GitHub releases)
 2. Run installer (auto-downloads from preferred mirror)
 3. Launch app → first-run setup wizard
@@ -285,12 +308,14 @@ Server = https://yourdomain.com/repos/extra/$arch
 6. Auto-check for updates weekly
 
 ### Existing Users:
+
 1. App auto-checks for updates daily
 2. Downloads in background
 3. Shows notification: "Kael-OS 0.2.0 available"
 4. One-click update or auto-update on next restart
 
 ### Linux (from repo):
+
 ```bash
 # Add Kael-OS repos to pacman.conf
 sudo pacman -S kael-os
@@ -301,6 +326,7 @@ sudo pacman -S kael-os
 ## 🌐 Web Dashboard (Future)
 
 Will provide:
+
 - Download statistics
 - Mirror health status
 - Release notes
@@ -327,14 +353,14 @@ async fn download_from_mirrors(filename: &str) -> Result<Vec<u8>> {
         "https://kael-os.web.app/releases/...",
         "https://yourdomain.com/kael-os/releases/...",
     ];
-    
+
     for mirror in mirrors {
         match reqwest::get(&format!("{}/{}", mirror, filename)).await {
             Ok(resp) if resp.status().is_success() => return Ok(resp.bytes().await?.to_vec()),
             _ => continue, // Try next mirror
         }
     }
-    
+
     Err("All mirrors failed".into())
 }
 ```
@@ -342,16 +368,19 @@ async fn download_from_mirrors(filename: &str) -> Result<Vec<u8>> {
 ## 🎯 Next Actions
 
 1. **Immediate** (this week):
+
    - [ ] Setup version.json API on cPanel
    - [ ] Create GitHub release process
    - [ ] Add update checker to app
 
 2. **This month**:
+
    - [ ] Build platform-specific installers
    - [ ] Setup Firebase Hosting mirror
    - [ ] Configure SSL certificate pinning
 
 3. **Next month**:
+
    - [ ] Implement repository mirroring
    - [ ] Build Arch AUR package
    - [ ] Create Homebrew tap (macOS)

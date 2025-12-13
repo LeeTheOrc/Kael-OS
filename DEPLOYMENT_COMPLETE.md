@@ -3,6 +3,7 @@
 ## Executive Summary
 
 You've built a powerful app with:
+
 - ✅ AES-256-GCM encryption
 - ✅ GPG key management
 - ✅ SSL/TLS certificates
@@ -11,6 +12,7 @@ You've built a powerful app with:
 - ✅ Auto-update infrastructure
 
 Now you need to **distribute it everywhere** using your 4-mirror strategy:
+
 1. **GitHub** (primary, free CDN)
 2. **Firebase** (backup, real-time sync)
 3. **cPanel** (your domain, Let's Encrypt)
@@ -19,6 +21,7 @@ Now you need to **distribute it everywhere** using your 4-mirror strategy:
 ## 📦 What You Have
 
 ### Codebase
+
 - **Desktop**: Rust + Dioxus + Tauri (Windows, Linux, macOS)
 - **Cloud**: Firebase (Auth, Firestore, Storage)
 - **Security**: AES-256-GCM, GPG, SSL/TLS, OAuth
@@ -26,6 +29,7 @@ Now you need to **distribute it everywhere** using your 4-mirror strategy:
 - **Updates**: Auto-update checker module ready to deploy
 
 ### Infrastructure
+
 - **cPanel Hosting**: yourdomain.com with Let's Encrypt SSL
 - **Firebase**: kael-os.web.app for cloud hosting
 - **GitHub**: LeeTheOrc/kael-os with free CDN for releases
@@ -34,15 +38,18 @@ Now you need to **distribute it everywhere** using your 4-mirror strategy:
 ## 🎯 The 8-Week Deployment Plan
 
 ### Phase 1: Update Server (Week 1-2)
+
 **Objective**: Make desktop app self-updating
 
 **Files to create on cPanel** (`/public_html/kael-os/api/`):
+
 - `config.php` - Define current version + mirrors
 - `check.php` - API endpoint to check for updates
 - `manifest.json` - Full release metadata
 - `.htaccess` - Enable CORS + caching + HTTPS
 
 **What happens**:
+
 1. User runs app
 2. App calls: `https://yourdomain.com/kael-os/api/check.php?platform=linux&version=0.1.0`
 3. Server responds: "Update available to 0.2.0"
@@ -51,9 +58,11 @@ Now you need to **distribute it everywhere** using your 4-mirror strategy:
 **Test after**: `curl https://yourdomain.com/kael-os/api/check.php`
 
 ### Phase 2: Build Installers (Week 2-3)
+
 **Objective**: Package app for each platform
 
 **Windows** (.msi):
+
 ```bash
 cargo build --release
 # Use WiX Toolset to create installer
@@ -61,6 +70,7 @@ cargo build --release
 ```
 
 **Linux** (.AppImage):
+
 ```bash
 cargo build --release
 # Use appimagetool to create AppImage
@@ -68,6 +78,7 @@ cargo build --release
 ```
 
 **macOS** (.dmg):
+
 ```bash
 cargo build --release
 # Use create-dmg script
@@ -75,25 +86,30 @@ cargo build --release
 ```
 
 **Get checksums**:
+
 ```bash
 sha256sum kael-os-*.* > hashes.txt
 # Use these in manifest.json
 ```
 
 ### Phase 3: Multi-Mirror Deployment (Week 3-4)
+
 **Objective**: Distribute installers across all mirrors
 
 **GitHub Releases**:
+
 1. Create tag: `v0.2.0`
 2. Upload: .msi, .AppImage, .dmg
 3. GitHub CDN serves automatically
 
 **Firebase Hosting**:
+
 1. Upload files to Firebase Storage
 2. Make public
 3. Available at: `https://kael-os.web.app/releases/v0.2.0/`
 
 **cPanel**:
+
 1. Create: `/public_html/kael-os/releases/v0.2.0/`
 2. Upload files via SFTP
 3. Served as: `https://yourdomain.com/kael-os/releases/v0.2.0/`
@@ -101,15 +117,18 @@ sha256sum kael-os-*.* > hashes.txt
 **Result**: Same file at 3 URLs, app tries all automatically
 
 ### Phase 4: Repository Mirroring (Week 4-5)
+
 **Objective**: Users can install packages from any mirror
 
 **Setup**:
+
 1. Create GitHub repo: `kael-os-repo`
 2. Create Arch PKGBUILDs for your packages
 3. Sign with GPG: `repo-add --sign core.db.tar.gz package.pkg.tar.zst`
 4. Deploy to all 3 mirrors
 
 **User experience**:
+
 ```bash
 # Add to pacman.conf
 [kael-os]
@@ -122,9 +141,11 @@ pacman -S kael-os
 ```
 
 ### Phase 5: Android MVP (Week 5-6)
+
 **Objective**: Get chat + settings working on Android
 
 **Setup**:
+
 ```bash
 npx react-native init KaelOS
 cd KaelOS
@@ -132,12 +153,14 @@ npm install firebase @react-native-firebase/app ...
 ```
 
 **Implement**:
+
 - OAuth login (Google + GitHub)
 - Chat with Firestore sync
 - Settings panel
 - Auto-update via Firebase
 
 **Build APK**:
+
 ```bash
 cd android
 ./gradlew assembleRelease
@@ -145,29 +168,35 @@ cd android
 ```
 
 **Distribute**:
+
 - GitHub Releases (direct download)
 - Firebase App Distribution (beta testers)
 - Google Play Store (later)
 
 ### Phase 6-7: Testing & Documentation
+
 **Objective**: Anyone can install without help
 
 **Test on**:
+
 - Windows 10/11 (different versions)
 - Ubuntu 22.04
 - macOS 12+
 - Android 8+
 
 **Documents to create**:
+
 - Installation guide (Windows/Linux/macOS)
 - Android setup guide
 - Troubleshooting FAQ
 - Contributing guide
 
 ### Phase 8: Launch (Week 7-8)
+
 **Objective**: v1.0.0 ready for public
 
 **Checklist**:
+
 - [ ] All mirrors populated
 - [ ] Update server working
 - [ ] Auto-update tested
@@ -247,11 +276,13 @@ User has v0.2.0 ✅
 ## 🔐 SSL/TLS Configuration
 
 ### Your Current Setup
+
 - ✅ cPanel: Let's Encrypt (auto-renews)
 - ✅ Firebase: Google-managed SSL
 - ✅ GitHub: GitHub-managed SSL
 
 ### To Implement Certificate Pinning
+
 ```rust
 // Add to crypto/mod.rs
 const PINNED_CERTIFICATES: &[&str] = &[
@@ -261,6 +292,7 @@ const PINNED_CERTIFICATES: &[&str] = &[
 ```
 
 **Get certificate hash**:
+
 ```bash
 # From cPanel Let's Encrypt cert
 openssl x509 -in /path/to/cert.pem -pubkey -noout | \
@@ -271,6 +303,7 @@ openssl x509 -in /path/to/cert.pem -pubkey -noout | \
 ## 📱 Android Specific
 
 ### React Native Stack
+
 - Navigation: React Navigation
 - UI: Custom + React Native components
 - Firebase: `@react-native-firebase/*`
@@ -279,12 +312,14 @@ openssl x509 -in /path/to/cert.pem -pubkey -noout | \
 - Terminal: Limited (command execution only)
 
 ### Distribution Strategy
+
 1. **APK**: Direct download from GitHub (sideload)
 2. **AAB**: Google Play Store ($25 developer account)
 3. **F-Droid**: Open source app store (free)
 4. **Firebase App Distribution**: Beta testing
 
 ### Minimum Requirements
+
 - Android 7.0+ (API level 24)
 - 50MB storage
 - Internet connection
@@ -292,6 +327,7 @@ openssl x509 -in /path/to/cert.pem -pubkey -noout | \
 ## 🚀 Immediate Next Steps (This Week)
 
 ### Step 1: Setup cPanel Update Server
+
 ```bash
 # SSH into cPanel
 ssh user@yourdomain.com
@@ -307,6 +343,7 @@ mkdir -p public_html/kael-os/api
 ```
 
 ### Step 2: Test Update Server
+
 ```bash
 curl "https://yourdomain.com/kael-os/api/check.php?platform=linux&arch=x86_64&version=0.1.0"
 
@@ -314,7 +351,9 @@ curl "https://yourdomain.com/kael-os/api/check.php?platform=linux&arch=x86_64&ve
 ```
 
 ### Step 3: Update App to Check Version
+
 Edit `src-tauri/src/components/app.rs`:
+
 ```rust
 use_effect(move || {
     spawn(async {
@@ -332,6 +371,7 @@ use_effect(move || {
 ```
 
 ### Step 4: Build Release Binary
+
 ```bash
 cd src-tauri
 cargo build --release
@@ -339,6 +379,7 @@ sha256sum target/release/kael-os > hash.txt
 ```
 
 ### Step 5: Create GitHub Release
+
 1. Go to GitHub repo
 2. Create tag: `v0.2.0`
 3. Upload binary
@@ -346,14 +387,14 @@ sha256sum target/release/kael-os > hash.txt
 
 ## 📊 Success Metrics
 
-| Metric | Target | Timeline |
-|--------|--------|----------|
-| Desktop installs | 100 | Week 4 |
-| First auto-update | 50% | Week 6 |
-| Android APK | 50 | Week 6 |
-| Package repo usage | 20 | Week 8 |
-| GitHub stars | 50 | Month 2 |
-| Active users | 500 | Month 6 |
+| Metric             | Target | Timeline |
+| ------------------ | ------ | -------- |
+| Desktop installs   | 100    | Week 4   |
+| First auto-update  | 50%    | Week 6   |
+| Android APK        | 50     | Week 6   |
+| Package repo usage | 20     | Week 8   |
+| GitHub stars       | 50     | Month 2  |
+| Active users       | 500    | Month 6  |
 
 ## 🎓 Key Learnings Applied
 
@@ -367,6 +408,7 @@ sha256sum target/release/kael-os > hash.txt
 ## 🏁 Vision Alignment
 
 This deployment architecture supports your GPL3 distro vision:
+
 - ✅ Open source (GitHub public repo)
 - ✅ Self-hosted option (cPanel mirror)
 - ✅ Cloud-first (Firebase backup)
@@ -377,6 +419,7 @@ This deployment architecture supports your GPL3 distro vision:
 ## 📞 Support
 
 For questions on:
+
 - **cPanel deployment** → UPDATE_SERVER_CPANEL.md
 - **Android development** → ANDROID_PLAN.md
 - **Overall strategy** → DEPLOYMENT.md

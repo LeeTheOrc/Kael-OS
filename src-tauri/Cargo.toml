@@ -1,6 +1,6 @@
 [package]
 name = "kael-os"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 
 [dependencies]
@@ -45,19 +45,19 @@ tauri-build = { version = "2.1", features = [] }
 
 # Release profile for production builds - optimized for size and speed
 [profile.release]
-opt-level = 3           # Maximum optimization
-lto = true              # Link-time optimization (slow compile, tiny output)
-codegen-units = 1       # Single codegen unit for better optimization
-strip = true            # Strip symbols for smaller binary
-panic = "abort"         # Abort on panic (saves code)
+opt-level = 3     # Maximum optimization
+lto = true        # Link-time optimization (slow compile, tiny output)
+codegen-units = 1 # Single codegen unit for better optimization
+strip = true      # Strip symbols for smaller binary
+panic = "abort"   # Abort on panic (saves code)
 
 # Ultra-optimized profile - smallest binary possible
 [profile.release-minimal]
 inherits = "release"
-opt-level = "z"         # Optimize for size over speed
-lto = "fat"             # Aggressively optimize
+opt-level = "z"      # Optimize for size over speed
+lto = "fat"          # Aggressively optimize
 
 # Development profile - faster compilation
 [profile.dev]
-opt-level = 0           # No optimization
-debug = true            # Keep debug symbols
+opt-level = 0 # No optimization
+debug = true  # Keep debug symbols

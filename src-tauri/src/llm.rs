@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
-use serde::{Deserialize, Serialize};
-use reqwest::Client;
-use std::time::Duration;
 use crate::auth::User;
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum LLMProvider {
@@ -33,20 +33,32 @@ pub struct LLMResponse {
 
 fn default_model_for(provider: &LLMProvider) -> String {
     match provider {
-        LLMProvider::Ollama => std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "mistral".to_string()),
-        LLMProvider::Mistral => std::env::var("MISTRAL_MODEL").unwrap_or_else(|_| "mistral-small".to_string()),
-        LLMProvider::Gemini => std::env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-1.5-pro".to_string()),
-        LLMProvider::Copilot => std::env::var("GITHUB_COPILOT_MODEL").unwrap_or_else(|_| "gpt-4o-mini".to_string()),
+        LLMProvider::Ollama => {
+            std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "mistral".to_string())
+        }
+        LLMProvider::Mistral => {
+            std::env::var("MISTRAL_MODEL").unwrap_or_else(|_| "mistral-small".to_string())
+        }
+        LLMProvider::Gemini => {
+            std::env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-1.5-pro".to_string())
+        }
+        LLMProvider::Copilot => {
+            std::env::var("GITHUB_COPILOT_MODEL").unwrap_or_else(|_| "gpt-4o-mini".to_string())
+        }
         LLMProvider::CopilotCLI => "gh-copilot".to_string(),
-        LLMProvider::Office365AI => std::env::var("OFFICE365AI_MODEL").unwrap_or_else(|_| "gpt-4o-mini".to_string()),
-        LLMProvider::GoogleOneAI => std::env::var("GOOGLEONEAI_MODEL").unwrap_or_else(|_| "gemini-1.5-pro".to_string()),
+        LLMProvider::Office365AI => {
+            std::env::var("OFFICE365AI_MODEL").unwrap_or_else(|_| "gpt-4o-mini".to_string())
+        }
+        LLMProvider::GoogleOneAI => {
+            std::env::var("GOOGLEONEAI_MODEL").unwrap_or_else(|_| "gemini-1.5-pro".to_string())
+        }
     }
 }
 
 /// Quick health check for the local Ollama service.
 pub async fn ping_local() -> bool {
-    let endpoint = std::env::var("OLLAMA_ENDPOINT")
-        .unwrap_or_else(|_| "http://127.0.0.1:11434".to_string());
+    let endpoint =
+        std::env::var("OLLAMA_ENDPOINT").unwrap_or_else(|_| "http://127.0.0.1:11434".to_string());
     let url = format!("{}/api/tags", endpoint.trim_end_matches('/'));
 
     if let Ok(client) = Client::builder().timeout(Duration::from_secs(3)).build() {
@@ -81,25 +93,25 @@ pub async fn send_request_with_fallback(
         request.model = default_model_for(&request.provider);
     }
     let result = send_request_single(request.clone(), user).await;
-    
+
     // If successful, return immediately
     if result.is_ok() {
         return result;
     }
-    
+
     // Otherwise, try enabled cloud providers in order
     let mut last_error = result.err().unwrap_or_else(|| "Unknown error".to_string());
-    
+
     for (provider, api_key) in enabled_providers {
         // Skip if it's the same as initial (already tried)
         if std::mem::discriminant(&provider) == std::mem::discriminant(&initial_request.provider) {
             continue;
         }
-        
+
         request.provider = provider.clone();
         request.api_key = api_key;
         request.model = default_model_for(&request.provider);
-        
+
         match send_request_single(request.clone(), user).await {
             Ok(response) => return Ok(response),
             Err(e) => {
@@ -108,11 +120,14 @@ pub async fn send_request_with_fallback(
             }
         }
     }
-    
+
     Err(format!("All providers failed. Last error: {}", last_error))
 }
 
-async fn send_request_single(mut request: LLMRequest, user: Option<&User>) -> Result<LLMResponse, String> {
+async fn send_request_single(
+    mut request: LLMRequest,
+    user: Option<&User>,
+) -> Result<LLMResponse, String> {
     if let Some(user) = user {
         if request.api_key.is_none() {
             let provider_name = match request.provider {
@@ -212,40 +227,68 @@ async fn send_request_single(mut request: LLMRequest, user: Option<&User>) -> Re
         }
         LLMProvider::Copilot => {
             // GitHub Models (Copilot) chat completions
-            let api_key = request.api_key.as_ref().ok_or_else(|| "GitHub Copilot requires an API key".to_string())?;
+            let api_key = request
+                .api_key
+                .as_ref()
+                .ok_or_else(|| "GitHub Copilot requires an API key".to_string())?;
             if api_key.is_empty() {
                 return Err("GitHub Copilot requires an API key".to_string());
             }
 
             #[derive(Serialize)]
-            struct ChatMessage { role: String, content: String }
+            struct ChatMessage {
+                role: String,
+                content: String,
+            }
             #[derive(Serialize)]
             struct CopilotReq {
                 model: String,
                 messages: Vec<ChatMessage>,
             }
             #[derive(Deserialize)]
-            struct ChoiceMsg { content: Option<String> }
+            struct ChoiceMsg {
+                content: Option<String>,
+            }
             #[derive(Deserialize)]
-            struct Choice { message: Option<ChoiceMsg> }
+            struct Choice {
+                message: Option<ChoiceMsg>,
+            }
             #[derive(Deserialize)]
-            struct CopilotResp { choices: Option<Vec<Choice>> }
+            struct CopilotResp {
+                choices: Option<Vec<Choice>>,
+            }
 
-            let endpoint = std::env::var("GITHUB_COPILOT_ENDPOINT")
-                .unwrap_or_else(|_| "https://models.inference.ai.azure.com/chat/completions".to_string());
+            let endpoint = std::env::var("GITHUB_COPILOT_ENDPOINT").unwrap_or_else(|_| {
+                "https://models.inference.ai.azure.com/chat/completions".to_string()
+            });
             let api_version = std::env::var("GITHUB_COPILOT_API_VERSION")
                 .unwrap_or_else(|_| "2024-10-01-preview".to_string());
 
             let mut messages = vec![];
             if let Some(sys) = &request.system {
-                messages.push(ChatMessage { role: "system".into(), content: sys.clone() });
+                messages.push(ChatMessage {
+                    role: "system".into(),
+                    content: sys.clone(),
+                });
             }
-            messages.push(ChatMessage { role: "user".into(), content: request.prompt.clone() });
+            messages.push(ChatMessage {
+                role: "user".into(),
+                content: request.prompt.clone(),
+            });
 
-            let body = CopilotReq { model: request.model.clone(), messages };
+            let body = CopilotReq {
+                model: request.model.clone(),
+                messages,
+            };
 
-            let url = format!("{}?api-version={}", endpoint.trim_end_matches('/'), api_version);
-            let client = Client::builder().timeout(Duration::from_secs(25)).build()
+            let url = format!(
+                "{}?api-version={}",
+                endpoint.trim_end_matches('/'),
+                api_version
+            );
+            let client = Client::builder()
+                .timeout(Duration::from_secs(25))
+                .build()
                 .map_err(|e| format!("Copilot client error: {}", e))?;
 
             let resp = client
@@ -262,7 +305,10 @@ async fn send_request_single(mut request: LLMRequest, user: Option<&User>) -> Re
                 return Err(format!("Copilot HTTP {}: {}", status, text));
             }
 
-            let parsed: CopilotResp = resp.json().await.map_err(|e| format!("Copilot parse error: {}", e))?;
+            let parsed: CopilotResp = resp
+                .json()
+                .await
+                .map_err(|e| format!("Copilot parse error: {}", e))?;
             let content = parsed
                 .choices
                 .and_then(|mut v| v.pop())
@@ -270,7 +316,10 @@ async fn send_request_single(mut request: LLMRequest, user: Option<&User>) -> Re
                 .and_then(|m| m.content)
                 .unwrap_or_else(|| "(empty Copilot reply)".to_string());
 
-            Ok(LLMResponse { provider: LLMProvider::Copilot, content })
+            Ok(LLMResponse {
+                provider: LLMProvider::Copilot,
+                content,
+            })
         }
         LLMProvider::CopilotCLI => {
             // GitHub Copilot CLI (no token needed, uses gh auth)
@@ -309,7 +358,10 @@ async fn send_request_single(mut request: LLMRequest, user: Option<&User>) -> Re
                 return Err("Copilot CLI returned empty response".to_string());
             }
 
-            Ok(LLMResponse { provider: LLMProvider::CopilotCLI, content })
+            Ok(LLMResponse {
+                provider: LLMProvider::CopilotCLI,
+                content,
+            })
         }
         LLMProvider::Office365AI => {
             if let Some(api_key) = request.api_key.as_ref() {

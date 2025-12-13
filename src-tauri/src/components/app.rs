@@ -255,19 +255,19 @@ pub fn App() -> Element {
                                 use chrono::Local;
                                 let timestamp = Local::now().format("%Y%m%d_%H%M%S").to_string();
                                 let filename = format!("kael_chat_{}.txt", timestamp);
-                                
+
                                 if let Ok(json_content) = std::fs::read_to_string("/tmp/kael_chat_history.json") {
                                     if let Ok(messages) = serde_json::from_str::<Vec<serde_json::Value>>(&json_content) {
                                         let mut text_content = format!("Kael Chat Export - {}\n", Local::now().format("%Y-%m-%d %H:%M:%S"));
                                         text_content.push_str(&"=".repeat(60));
                                         text_content.push_str("\n\n");
-                                        
+
                                         for msg in messages {
                                             if let (Some(author), Some(text)) = (msg.get("author").and_then(|a| a.as_str()), msg.get("text").and_then(|t| t.as_str())) {
                                                 text_content.push_str(&format!("[{}]\n{}\n\n", author, text));
                                             }
                                         }
-                                        
+
                                         let save_path = format!("/tmp/{}", filename);
                                         match std::fs::write(&save_path, text_content) {
                                             Ok(_) => log::info!("Chat saved to: {}", save_path),
@@ -306,9 +306,9 @@ pub fn App() -> Element {
                         let user_photo_url = auth_service.read().get_user().and_then(|u| u.photo_url);
                         let user_name = auth_service.read().get_user().map(|u| u.name).unwrap_or_else(|| "Architect".to_string());
                         rsx! {
-                            ChatPanel { 
-                                term_out: terminal_output.clone(), 
-                                pty: pty_instance.clone(), 
+                            ChatPanel {
+                                term_out: terminal_output.clone(),
+                                pty: pty_instance.clone(),
                                 current_cmd: current_command.clone(),
                                 user_photo_url: user_photo_url,
                                 user_name: user_name,

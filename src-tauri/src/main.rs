@@ -1,21 +1,22 @@
 mod auth;
-mod components;
-mod terminal;
-mod llm;
-mod firebase;
 mod commands;
-mod db;
-mod state;
-mod oauth_server;
-mod webview_oauth;
+mod components;
 mod crypto;
+mod db;
+mod firebase;
 mod gpg;
+mod llm;
+mod oauth_server;
 mod ssl;
+mod state;
+mod terminal;
 mod updater;
+mod version;
 mod webdav;
+mod webview_oauth;
 
-use dioxus::prelude::*;
 use crate::components::app::App;
+use dioxus::prelude::*;
 
 fn main() {
     dotenv::from_filename(".env.local").ok();
@@ -32,4 +33,3 @@ fn main() {
 fn app() -> Element {
     rsx! { App { } }
 }
-

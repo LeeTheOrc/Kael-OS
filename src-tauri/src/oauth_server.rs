@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
+use once_cell::sync::Lazy;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use std::collections::HashMap;
-use once_cell::sync::Lazy;
 
 #[derive(Clone, Debug)]
 pub struct OAuthCallback {
@@ -27,7 +27,7 @@ impl OAuthServer {
 
     async fn run_server(&self) {
         let callback_data = Arc::clone(&self.callback_data);
-        
+
         let listener = match tokio::net::TcpListener::bind("127.0.0.1:5173").await {
             Ok(l) => l,
             Err(e) => {
@@ -35,9 +35,9 @@ impl OAuthServer {
                 return;
             }
         };
-        
+
         log::info!("OAuth callback server listening on 127.0.0.1:5173");
-        
+
         loop {
             match listener.accept().await {
                 Ok((socket, _)) => {
@@ -83,8 +83,12 @@ async fn handle_connection(
     match socket.read(&mut buf).await {
         Ok(n) if n > 0 => {
             let request = String::from_utf8_lossy(&buf[..n]);
-            log::info!("OAuth server received request ({}bytes): {}", n, request.lines().next().unwrap_or(""));
-            
+            log::info!(
+                "OAuth server received request ({}bytes): {}",
+                n,
+                request.lines().next().unwrap_or("")
+            );
+
             // Parse the request line
             if let Some(request_line) = request.lines().next() {
                 if request_line.contains("/auth/google/callback") {
@@ -121,9 +125,17 @@ async fn handle_oauth_callback(
     if code.is_some() {
         log::info!("OAuth callback received for {}: code present", provider);
     } else if error.is_some() {
-        log::warn!("OAuth callback error for {}: {:?} - {:?}", provider, error, error_description);
+        log::warn!(
+            "OAuth callback error for {}: {:?} - {:?}",
+            provider,
+            error,
+            error_description
+        );
     } else {
-        log::warn!("OAuth callback received but no code or error for {}", provider);
+        log::warn!(
+            "OAuth callback received but no code or error for {}",
+            provider
+        );
     }
 
     let callback = OAuthCallback {
@@ -134,7 +146,7 @@ async fn handle_oauth_callback(
 
     let mut data = callback_data.lock().await;
     data.insert(provider.to_string(), callback);
-    
+
     log::info!("OAuth callback stored for provider: {}", provider);
 }
 
@@ -144,22 +156,22 @@ fn extract_param(request: &str, param: &str) -> Option<String> {
     if let Some(start) = request.find(&search) {
         let value_start = start + search.len();
         let remaining = &request[value_start..];
-        
+
         // Find the end of the parameter (either & or space)
         let value_end = remaining
             .find(|c: char| c == '&' || c == ' ')
             .unwrap_or(remaining.len());
-        
+
         let raw_value = &remaining[..value_end];
-        
+
         // URL decode the value
         let decoded = urlencoding::decode(raw_value)
             .ok()
             .map(|cow| cow.into_owned())
             .unwrap_or_else(|| raw_value.to_string());
-        
+
         log::debug!("Extracted param {}: {} -> {}", param, raw_value, decoded);
-        
+
         if decoded.is_empty() {
             None
         } else {

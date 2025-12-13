@@ -1,12 +1,13 @@
 #![allow(dead_code)]
 
-use serde::{Deserialize, Serialize};
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
 
 use crate::auth::{decrypt_secret, encrypt_secret};
 
 fn project_id() -> Result<String, String> {
-    std::env::var("VITE_FIREBASE_PROJECT_ID").map_err(|_| "Missing VITE_FIREBASE_PROJECT_ID".to_string())
+    std::env::var("VITE_FIREBASE_PROJECT_ID")
+        .map_err(|_| "Missing VITE_FIREBASE_PROJECT_ID".to_string())
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -24,7 +25,7 @@ pub struct User {
 
 #[derive(Deserialize)]
 struct FirestoreList {
-    documents: Option<Vec<FirestoreDoc>>,    
+    documents: Option<Vec<FirestoreDoc>>,
 }
 
 #[derive(Deserialize)]
@@ -41,7 +42,9 @@ struct FirestoreFields {
 
 #[derive(Deserialize)]
 #[allow(non_snake_case)]
-struct FirestoreString { stringValue: String }
+struct FirestoreString {
+    stringValue: String,
+}
 
 pub async fn get_api_keys(user: &crate::auth::User) -> Result<Vec<ApiKey>, String> {
     let project = project_id()?;
@@ -58,7 +61,10 @@ pub async fn get_api_keys(user: &crate::auth::User) -> Result<Vec<ApiKey>, Strin
         // Empty collection returns 404; treat as empty
         return Ok(vec![]);
     }
-    let data: FirestoreList = resp.json().await.map_err(|e| format!("Parse error: {}", e))?;
+    let data: FirestoreList = resp
+        .json()
+        .await
+        .map_err(|e| format!("Parse error: {}", e))?;
     let mut out = vec![];
     if let Some(docs) = data.documents {
         for d in docs {
@@ -87,16 +93,29 @@ struct FirestoreWriteFields<'a> {
 
 #[derive(Serialize)]
 #[allow(non_snake_case)]
-struct FirestoreWriteString<'a> { stringValue: &'a str }
+struct FirestoreWriteString<'a> {
+    stringValue: &'a str,
+}
 
-pub async fn save_api_key(user: &crate::auth::User, name: &str, plaintext_value: &str) -> Result<(), String> {
+pub async fn save_api_key(
+    user: &crate::auth::User,
+    name: &str,
+    plaintext_value: &str,
+) -> Result<(), String> {
     let project = project_id()?;
     let doc_id = name.to_lowercase().replace(' ', "_");
     let url = format!("https://firestore.googleapis.com/v1/projects/{}/databases/(default)/documents/users/{}/api_keys?documentId={}",
         project, user.uid, doc_id);
     let client = Client::new();
     let encrypted = encrypt_secret(user, plaintext_value);
-    let body = FirestoreWrite { fields: FirestoreWriteFields { name: FirestoreWriteString { stringValue: name }, value: FirestoreWriteString { stringValue: &encrypted } } };
+    let body = FirestoreWrite {
+        fields: FirestoreWriteFields {
+            name: FirestoreWriteString { stringValue: name },
+            value: FirestoreWriteString {
+                stringValue: &encrypted,
+            },
+        },
+    };
     let resp = client
         .post(url)
         .bearer_auth(&user.id_token)

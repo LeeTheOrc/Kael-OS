@@ -3,9 +3,9 @@
 
 #![allow(dead_code)]
 
-use std::path::Path;
 use reqwest::Client;
 use std::error::Error;
+use std::path::Path;
 
 #[derive(Clone, Debug)]
 pub struct WebDavConfig {
@@ -109,10 +109,7 @@ impl WebDavClient {
     }
 
     /// List files in WebDAV directory
-    pub async fn list_directory(
-        &self,
-        remote_path: &str,
-    ) -> Result<Vec<String>, Box<dyn Error>> {
+    pub async fn list_directory(&self, remote_path: &str) -> Result<Vec<String>, Box<dyn Error>> {
         let list_url = format!(
             "{}/{}",
             self.config.url.trim_end_matches('/'),

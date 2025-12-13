@@ -5,8 +5,9 @@ Your app now has **complete in-app OAuth support** for Google and GitHub authent
 ## ✅ What's Been Implemented
 
 ### Backend Infrastructure
+
 - **OAuth Callback Server**: Listens on `localhost:5173`, captures authorization codes
-- **Token Exchange Functions**: 
+- **Token Exchange Functions**:
   - `exchange_google_code_for_token()` - Posts auth code to Google, decodes JWT, extracts user info
   - `exchange_github_code_for_token()` - Posts auth code to GitHub, fetches user profile
 - **OAuth Result Storage**: In-memory HashMap to temporarily store callback results
@@ -18,7 +19,7 @@ All commands are callable from your Dioxus frontend:
 
 ```rust
 // Get the OAuth login URL for a provider
-get_oauth_url(provider: "google" | "github") 
+get_oauth_url(provider: "google" | "github")
   → Returns: String (the OAuth URL)
 
 // Poll for authorization code (after user logs in)
@@ -31,6 +32,7 @@ exchange_oauth_token(provider: "google" | "github", code: String)
 ```
 
 ### OAuth Credentials (Pre-configured)
+
 - **Google OAuth Client ID**: `384654392238-k02b3cvemoee9uq87pa3a3bk0gf1hbnk.apps.googleusercontent.com`
 - **GitHub OAuth Client ID**: `Ov23liqnLH8iIZOZ8sMT`
 - **Redirect URI**: `http://localhost:5173/auth/{provider}/callback`
@@ -38,6 +40,7 @@ exchange_oauth_token(provider: "google" | "github", code: String)
 ## 🧪 What You Can Test Right Now
 
 ### Test 1: Verify OAuth Server is Running
+
 ```bash
 # The app should start without errors
 cargo run --manifest-path src-tauri/Cargo.toml
@@ -46,36 +49,40 @@ cargo run --manifest-path src-tauri/Cargo.toml
 ```
 
 ### Test 2: Manually Test OAuth Flow
+
 You already did this! You received this callback URL:
+
 ```
 http://localhost:5173/auth/google/callback?code=4%2F0ATX87lNDgeQF6i7l4ZgRgovpjs7_bZVUCWhqOguk0HUe7zCZZjAJwVAHYfwYqd2-pCi0Yg&scope=...
 ```
 
 This proves:
+
 - ✅ OAuth server is receiving callbacks
 - ✅ Authorization codes are being captured
 - ✅ The flow is working end-to-end
 
 ### Test 3: Test Backend Commands
+
 You can test the Tauri commands directly from the browser console (when running in Dioxus Desktop):
 
 ```javascript
 // In the Dioxus app console, you can test these:
 
 // 1. Get OAuth URL
-const googleUrl = await invoke('get_oauth_url', { provider: 'google' });
-console.log('Google OAuth URL:', googleUrl);
+const googleUrl = await invoke("get_oauth_url", { provider: "google" });
+console.log("Google OAuth URL:", googleUrl);
 
 // 2. Poll for callback (run this after user logs in)
-const result = await invoke('poll_oauth_callback', { provider: 'google' });
-console.log('OAuth result:', result);
+const result = await invoke("poll_oauth_callback", { provider: "google" });
+console.log("OAuth result:", result);
 
 // 3. Exchange token
-const user = await invoke('exchange_oauth_token', { 
-  provider: 'google', 
-  code: 'your_auth_code_here'
+const user = await invoke("exchange_oauth_token", {
+  provider: "google",
+  code: "your_auth_code_here",
 });
-console.log('User:', user);
+console.log("User:", user);
 ```
 
 ## 📋 Next Steps: Implement Frontend Modal
@@ -83,6 +90,7 @@ console.log('User:', user);
 To make this fully functional, add an OAuth modal component to your login screen that:
 
 1. **Opens when user clicks "Sign in with Google/GitHub"**
+
    ```rust
    onclick: move |_| {
        show_oauth_modal.set(true);
@@ -91,12 +99,14 @@ To make this fully functional, add an OAuth modal component to your login screen
    ```
 
 2. **Fetches and displays OAuth URL in iframe**
+
    ```rust
    let url = invoke("get_oauth_url", { provider });
    // Load in iframe: <iframe src={url}>
    ```
 
 3. **Polls for authorization code**
+
    ```rust
    spawn(async move {
        loop {
@@ -193,14 +203,14 @@ To make this fully functional, add an OAuth modal component to your login screen
 
 ## 🔧 Code Locations
 
-| Component | Location | Status |
-|-----------|----------|--------|
-| OAuth Server | `src-tauri/src/oauth_server.rs` | ✅ Complete |
-| Token Exchange | `src-tauri/src/auth.rs` | ✅ Complete |
-| WebView OAuth Helper | `src-tauri/src/webview_oauth.rs` | ✅ Complete |
-| Tauri Commands | `src-tauri/src/commands.rs` | ✅ Complete |
-| OAuth Modal Component | `src-tauri/src/components/oauth_modal.rs` | 📋 Placeholder |
-| Frontend Integration | `src-tauri/src/components/login.rs` | 🔄 Ready for integration |
+| Component             | Location                                  | Status                   |
+| --------------------- | ----------------------------------------- | ------------------------ |
+| OAuth Server          | `src-tauri/src/oauth_server.rs`           | ✅ Complete              |
+| Token Exchange        | `src-tauri/src/auth.rs`                   | ✅ Complete              |
+| WebView OAuth Helper  | `src-tauri/src/webview_oauth.rs`          | ✅ Complete              |
+| Tauri Commands        | `src-tauri/src/commands.rs`               | ✅ Complete              |
+| OAuth Modal Component | `src-tauri/src/components/oauth_modal.rs` | 📋 Placeholder           |
+| Frontend Integration  | `src-tauri/src/components/login.rs`       | 🔄 Ready for integration |
 
 ## 🧑‍💻 Example Frontend Code
 
@@ -263,23 +273,25 @@ GITHUB_OAUTH_CLIENT_ID=Ov23liqnLH8iIZOZ8sMT
 
 ## ❓ Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| OAuth server not listening | Check logs for errors, ensure main.rs initializes it |
-| Code never detected | User didn't click "Allow" on OAuth consent screen |
-| Token exchange fails | Check OAuth credentials in .env.local |
-| Modal shows blank | Check browser console for CORS/iframe errors |
-| Callback not received | Verify OAuth redirect URI is `http://localhost:5173/auth/{provider}/callback` |
+| Issue                      | Solution                                                                      |
+| -------------------------- | ----------------------------------------------------------------------------- |
+| OAuth server not listening | Check logs for errors, ensure main.rs initializes it                          |
+| Code never detected        | User didn't click "Allow" on OAuth consent screen                             |
+| Token exchange fails       | Check OAuth credentials in .env.local                                         |
+| Modal shows blank          | Check browser console for CORS/iframe errors                                  |
+| Callback not received      | Verify OAuth redirect URI is `http://localhost:5173/auth/{provider}/callback` |
 
 ## 📞 Summary
 
 **What's Done:**
+
 - ✅ OAuth Server (captures auth codes)
 - ✅ Token Exchange (Google & GitHub)
 - ✅ Tauri Commands (frontend can call)
 - ✅ Configuration (OAuth credentials)
 
 **What's Next:**
+
 - 📋 Frontend Modal (show OAuth in iframe)
 - 📋 Polling Logic (detect callback code)
 - 📋 Auto-Login (set user when token received)

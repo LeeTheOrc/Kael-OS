@@ -1,29 +1,26 @@
 use crate::state::{ChatMessage, KaelConfig};
+use crate::webdav::{WebDavClient, WebDavConfig};
+use crate::version::Version;
+use std::path::Path;
 use rusqlite::Connection;
+use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::{command, State, Window};
-use serde::{Deserialize, Serialize};
 
 #[allow(dead_code)]
 #[tauri::command]
-pub fn send_message(
-    message: String,
-    db: State<Mutex<Connection>>,
-) -> Result<ChatMessage, String> {
+pub fn send_message(message: String, db: State<Mutex<Connection>>) -> Result<ChatMessage, String> {
     let conn = db.lock().map_err(|e| e.to_string())?;
     let msg = ChatMessage::new("user".to_string(), message);
-    
-    crate::db::add_message(&conn, &msg.role, &msg.text)
-        .map_err(|e| e.to_string())?;
-    
+
+    crate::db::add_message(&conn, &msg.role, &msg.text).map_err(|e| e.to_string())?;
+
     Ok(msg)
 }
 
 #[allow(dead_code)]
 #[tauri::command]
-pub fn get_chat_history(
-    db: State<Mutex<Connection>>,
-) -> Result<Vec<ChatMessage>, String> {
+pub fn get_chat_history(db: State<Mutex<Connection>>) -> Result<Vec<ChatMessage>, String> {
     let conn = db.lock().map_err(|e| e.to_string())?;
     crate::db::get_chat_history(&conn).map_err(|e| e.to_string())
 }
@@ -91,15 +88,18 @@ pub fn get_oauth_result(state: State<'_, OauthResultState>) -> Result<Option<Oau
 }
 
 #[tauri::command]
-pub async fn initiate_oauth(provider: String, _app_handle: tauri::AppHandle) -> Result<String, String> {
+pub async fn initiate_oauth(
+    provider: String,
+    _app_handle: tauri::AppHandle,
+) -> Result<String, String> {
     log::info!("Initiating OAuth for provider: {}", provider);
-    
+
     // Get Firebase config from environment
     let api_key = std::env::var("VITE_FIREBASE_API_KEY")
         .map_err(|_| "VITE_FIREBASE_API_KEY not set in environment")?;
     let auth_domain = std::env::var("VITE_FIREBASE_AUTH_DOMAIN")
         .map_err(|_| "VITE_FIREBASE_AUTH_DOMAIN not set in environment")?;
-    
+
     // Build Firebase OAuth URL
     let redirect_uri = "http://localhost:5173/__/auth/handler"; // Tauri deep link
     let _provider_id = match provider.as_str() {
@@ -107,12 +107,12 @@ pub async fn initiate_oauth(provider: String, _app_handle: tauri::AppHandle) -> 
         "github" => "github.com",
         _ => return Err("Invalid provider".to_string()),
     };
-    
+
     let _auth_url = format!(
         "https://{}/v1/accounts:signInWithIdp?key={}",
         auth_domain, api_key
     );
-    
+
     // Build a web URL that can be loaded inside our in-app webview
     // Note: the frontend should open this URL inside the embedded webview window.
     let oauth_url = format!(
@@ -130,9 +130,11 @@ pub async fn initiate_oauth(provider: String, _app_handle: tauri::AppHandle) -> 
 pub fn get_oauth_url(provider: String) -> Result<String, String> {
     let oauth_url = match provider.as_str() {
         "google" => {
-            let client_id = std::env::var("GOOGLE_OAUTH_CLIENT_ID")
-                .unwrap_or_else(|_| "384654392238-k02b3cvemoee9uq87pa3a3bk0gf1hbnk.apps.googleusercontent.com".to_string());
-            
+            let client_id = std::env::var("GOOGLE_OAUTH_CLIENT_ID").unwrap_or_else(|_| {
+                "384654392238-k02b3cvemoee9uq87pa3a3bk0gf1hbnk.apps.googleusercontent.com"
+                    .to_string()
+            });
+
             format!(
                 "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri=http://localhost:5173/auth/google/callback&response_type=code&scope=email%20profile%20openid",
                 client_id
@@ -141,7 +143,7 @@ pub fn get_oauth_url(provider: String) -> Result<String, String> {
         "github" => {
             let client_id = std::env::var("GITHUB_OAUTH_CLIENT_ID")
                 .unwrap_or_else(|_| "Ov23liqnLH8iIZOZ8sMT".to_string());
-            
+
             format!(
                 "https://github.com/login/oauth/authorize?client_id={}&redirect_uri=http://localhost:5173/auth/github/callback&scope=user:email",
                 client_id
@@ -149,7 +151,7 @@ pub fn get_oauth_url(provider: String) -> Result<String, String> {
         }
         _ => return Err("Invalid provider".to_string()),
     };
-    
+
     log::info!("OAuth URL for {}: {}", provider, oauth_url);
     Ok(oauth_url)
 }
@@ -167,7 +169,7 @@ pub async fn store_oauth_code(
         code,
         state: state.unwrap_or_default(),
     };
-    
+
     crate::webview_oauth::store_oauth_result(oauth_result).await;
     log::info!("Stored OAuth result");
     Ok(())
@@ -184,12 +186,14 @@ pub async fn get_stored_oauth_code() -> Result<Option<crate::webview_oauth::OAut
 /// Poll for OAuth callback result from the server
 #[allow(dead_code)]
 #[tauri::command]
-pub async fn poll_oauth_callback(provider: String) -> Result<Option<crate::webview_oauth::OAuthResult>, String> {
+pub async fn poll_oauth_callback(
+    provider: String,
+) -> Result<Option<crate::webview_oauth::OAuthResult>, String> {
     // First check if result is already stored locally
     if let Some(result) = crate::webview_oauth::get_and_clear_oauth_result().await {
         return Ok(Some(result));
     }
-    
+
     // Then check the OAuth server
     let result = crate::webview_oauth::get_oauth_result_from_server(&provider).await;
     Ok(result)
@@ -207,5 +211,86 @@ pub async fn exchange_oauth_token(
         "github" => crate::auth::exchange_github_code_for_token(&code).await,
         _ => Err("Invalid provider".to_string()),
     }
+}
+
+/// Upload a local file to WebDAV using basic auth PUT
+#[tauri::command]
+pub async fn webdav_upload_file(
+    base_url: String,
+    username: String,
+    password: String,
+    local_path: String,
+    remote_path: String,
+) -> Result<String, String> {
+    let client = WebDavClient::new(WebDavConfig {
+        url: base_url,
+        username,
+        password,
+    });
+    let path = std::path::Path::new(&local_path);
+    client
+        .upload_file(path, &remote_path)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok("WebDAV upload complete".to_string())
+}
+
+/// Get current app version from version.json
+#[tauri::command]
+pub fn get_version() -> Result<Version, String> {
+    let version_path = Path::new("version.json");
+    Version::load(version_path).map_err(|e| format!("Failed to load version: {}", e))
+}
+
+/// Bump version to next stage (alpha → beta → release)
+/// Only allows forward bumps, respects semantic versioning
+#[tauri::command]
+pub fn bump_version(stage: String) -> Result<String, String> {
+    if !["alpha", "beta", "release"].contains(&stage.as_str()) {
+        return Err("Invalid stage: must be alpha, beta, or release".to_string());
+    }
+
+    let version_path = Path::new("version.json");
+    let mut version = Version::load(version_path).map_err(|e| e.to_string())?;
+
+    // Validate stage transition
+    match (version.stage.as_str(), stage.as_str()) {
+        ("alpha", "alpha") => {
+            version.build += 1;
+        }
+        ("alpha", "beta") => {
+            version.minor += 1;
+            version.patch = 0;
+            version.stage = "beta".to_string();
+            version.build = 1;
+        }
+        ("beta", "beta") => {
+            version.build += 1;
+        }
+        ("beta", "release") => {
+            version.major += 1;
+            version.minor = 0;
+            version.patch = 0;
+            version.stage = "release".to_string();
+            version.build = 1;
+        }
+        ("release", "release") => {
+            version.patch += 1;
+            version.build += 1;
+        }
+        _ => {
+            return Err(format!(
+                "Cannot transition from {} to {}. Allowed: alpha→beta→release",
+                version.stage, stage
+            ))
+        }
+    }
+
+    version.timestamp = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+    let json = serde_json::to_string_pretty(&version)
+        .map_err(|e| format!("Failed to serialize version: {}", e))?;
+    std::fs::write(version_path, json).map_err(|e| e.to_string())?;
+
+    Ok(version.to_string())
 }
 

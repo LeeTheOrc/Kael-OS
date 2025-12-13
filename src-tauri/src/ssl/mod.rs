@@ -40,11 +40,7 @@ pub fn generate_self_signed_cert(
     let now = chrono::Local::now();
     let year_str = now.format("%Y").to_string();
     let current_year: i32 = year_str.parse().unwrap_or(2025);
-    params.not_after = rcgen::date_time_ymd(
-        current_year + (days_valid / 365) as i32,
-        1,
-        1,
-    );
+    params.not_after = rcgen::date_time_ymd(current_year + (days_valid / 365) as i32, 1, 1);
 
     // Generate certificate and key
     let cert = rcgen::Certificate::from_params(params)
@@ -54,8 +50,7 @@ pub fn generate_self_signed_cert(
         .serialize_pem()
         .map_err(|e| format!("Failed to serialize certificate: {}", e))?;
 
-    let key_pem = cert
-        .serialize_private_key_pem();
+    let key_pem = cert.serialize_private_key_pem();
 
     // Extract certificate info
     let info = CertificateInfo {
@@ -85,8 +80,7 @@ pub fn save_certificate(
 ) -> Result<(), String> {
     // Ensure directory exists
     if let Some(parent) = Path::new(cert_path).parent() {
-        fs::create_dir_all(parent)
-            .map_err(|e| format!("Failed to create directory: {}", e))?;
+        fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
     }
 
     // Save certificate
@@ -94,8 +88,7 @@ pub fn save_certificate(
         .map_err(|e| format!("Failed to write certificate: {}", e))?;
 
     // Save key (with restricted permissions on Unix)
-    fs::write(key_path, &cert_data.key_pem)
-        .map_err(|e| format!("Failed to write key: {}", e))?;
+    fs::write(key_path, &cert_data.key_pem).map_err(|e| format!("Failed to write key: {}", e))?;
 
     // Set restrictive permissions on key file (Unix only)
     #[cfg(unix)]
@@ -111,14 +104,12 @@ pub fn save_certificate(
 
 /// Load certificate from file
 pub fn load_certificate(cert_path: &str) -> Result<String, String> {
-    fs::read_to_string(cert_path)
-        .map_err(|e| format!("Failed to read certificate: {}", e))
+    fs::read_to_string(cert_path).map_err(|e| format!("Failed to read certificate: {}", e))
 }
 
 /// Load private key from file
 pub fn load_private_key(key_path: &str) -> Result<String, String> {
-    fs::read_to_string(key_path)
-        .map_err(|e| format!("Failed to read private key: {}", e))
+    fs::read_to_string(key_path).map_err(|e| format!("Failed to read private key: {}", e))
 }
 
 /// Get certificate info from PEM data

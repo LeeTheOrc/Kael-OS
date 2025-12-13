@@ -30,6 +30,7 @@ Your app will work across 4 platforms using 4 mirrors:
 ## 🚀 Implementation Order (Next 8 weeks)
 
 ### Week 1-2: Update Server (cPanel)
+
 **Goal**: Get auto-update working for desktop
 
 ```bash
@@ -42,6 +43,7 @@ Your app will work across 4 platforms using 4 mirrors:
 **Deliverable**: Desktop app checks version on startup
 
 ### Week 2-3: Build Installers
+
 **Goal**: Package app for Windows, Linux, macOS
 
 ```bash
@@ -54,6 +56,7 @@ Your app will work across 4 platforms using 4 mirrors:
 **Deliverable**: 3 installer files + hashes → update in manifest.json
 
 ### Week 3-4: GitHub Releases + Firebase Hosting
+
 **Goal**: Deploy to 2 mirrors
 
 ```bash
@@ -71,6 +74,7 @@ Your app will work across 4 platforms using 4 mirrors:
 **Deliverable**: All mirrors populated, app downloads from any
 
 ### Week 4-5: Repository Sync Setup
+
 **Goal**: Sync Arch repos across mirrors
 
 ```bash
@@ -83,6 +87,7 @@ Your app will work across 4 platforms using 4 mirrors:
 **Deliverable**: Users can install packages from any mirror
 
 ### Week 5-6: Android MVP
+
 **Goal**: Chat + Settings working on Android
 
 ```bash
@@ -96,6 +101,7 @@ Your app will work across 4 platforms using 4 mirrors:
 **Deliverable**: Android beta app for testing
 
 ### Week 6-7: Testing & Docs
+
 **Goal**: Make it foolproof for others
 
 ```bash
@@ -108,6 +114,7 @@ Your app will work across 4 platforms using 4 mirrors:
 **Deliverable**: Easy install guide + troubleshooting
 
 ### Week 7-8: Polish & Distribution
+
 **Goal**: Ready for public release
 
 ```bash
@@ -123,6 +130,7 @@ Your app will work across 4 platforms using 4 mirrors:
 ## 💻 What to Code Right Now (This Week)
 
 ### 1. Add Updater Module to App
+
 File: `src-tauri/src/components/app.rs`
 
 ```rust
@@ -143,6 +151,7 @@ use_effect(move || {
 ```
 
 ### 2. Create .env Configuration
+
 File: `.env.local`
 
 ```env
@@ -159,6 +168,7 @@ ARCH=x86_64
 ```
 
 ### 3. Build & Get Hashes
+
 ```bash
 cd src-tauri && cargo build --release
 sha256sum target/release/kael-os
@@ -167,6 +177,7 @@ sha256sum target/release/kael-os
 ```
 
 ### 4. Deploy to cPanel
+
 ```bash
 # Connect via SFTP
 sftp user@yourdomain.com
@@ -194,6 +205,7 @@ curl https://yourdomain.com/kael-os/api/check.php?platform=linux
 ## 📊 Multi-Mirror Reliability
 
 Your fallback strategy:
+
 ```
 App tries to download from:
   1. GitHub (99.9% uptime, CDN)
@@ -219,6 +231,7 @@ All have same file hashes → safe to use any
 ## 📞 User Experience
 
 **User installs app:**
+
 1. Downloads from yourdomain.com or GitHub
 2. Runs installer (auto-verifies hash)
 3. Creates account (Google/GitHub OAuth)
@@ -228,6 +241,7 @@ All have same file hashes → safe to use any
 7. One-click update or auto-update on restart
 
 **For Arch Linux users:**
+
 ```bash
 # Add to /etc/pacman.conf
 [kael-os]
@@ -238,6 +252,7 @@ sudo pacman -S kael-os
 ```
 
 **For Android users:**
+
 1. Download APK from GitHub or Firebase
 2. Install (one tap)
 3. Same login + auto-update experience
@@ -255,13 +270,13 @@ sudo pacman -S kael-os
 
 ## 🆘 Common Issues & Solutions
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| Update check times out | Mirror down | Try next mirror |
-| Hash mismatch | Corrupted download | Retry or use different mirror |
-| App won't start | First run no network | Show offline mode message |
-| Can't login | Firebase offline | Cache last auth token |
-| Repo sync fails | Mirror unavailable | Queue for next sync |
+| Issue                  | Cause                | Solution                      |
+| ---------------------- | -------------------- | ----------------------------- |
+| Update check times out | Mirror down          | Try next mirror               |
+| Hash mismatch          | Corrupted download   | Retry or use different mirror |
+| App won't start        | First run no network | Show offline mode message     |
+| Can't login            | Firebase offline     | Cache last auth token         |
+| Repo sync fails        | Mirror unavailable   | Queue for next sync           |
 
 ## 🚀 Launch Timeline
 

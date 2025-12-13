@@ -2,9 +2,20 @@
 set -euo pipefail
 
 # Builds, signs, and uploads a desktop tarball + signature to Web Disk.
-# Requires: cargo build --release has produced target/release/kael-os
+# Uses version.json for version info (not env var).
 
-VERSION=${VERSION:-0.2.0}
+VERSION_FILE="version.json"
+if [[ ! -f "$VERSION_FILE" ]]; then
+  echo "Error: $VERSION_FILE not found. Run scripts/bump-version.sh first." >&2
+  exit 1
+fi
+
+# Extract version from version.json
+VERSION=$(jq -r '.major as $maj | .minor as $min | .patch as $pat | "\($maj).\($min).\($pat)"' "$VERSION_FILE")
+STAGE=$(jq -r '.stage' "$VERSION_FILE")
+BUILD=$(jq -r '.build' "$VERSION_FILE")
+SEMVER="${VERSION}-${STAGE}.${BUILD}"
+
 APP_BIN=${APP_BIN:-target/release/kael-os}
 OUT_DIR=${OUT_DIR:-dist}
 PKG_NAME="kael-os-${VERSION}-x86_64"

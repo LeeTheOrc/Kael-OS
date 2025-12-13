@@ -1,8 +1,8 @@
 // src-tauri/src/components/settings.rs
-use dioxus::prelude::*;
 use crate::auth::AuthService;
-use crate::components::login::LoginPanel;
 use crate::components::api_key_manager::ApiKeyManager;
+use crate::components::login::LoginPanel;
+use dioxus::prelude::*;
 
 #[derive(Clone, PartialEq, Debug)]
 struct ProviderUIState {
@@ -100,7 +100,7 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
             // Sidebar Menu
             div {
                 style: "width: 240px; border-right: 1px solid #3a2d56; background: linear-gradient(180deg, #1c162b 0%, #140f22 100%); padding: 16px; overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column;",
-                
+
                 // Header with back button
                 button {
                     class: "w-full mb-6",
@@ -183,12 +183,12 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                             style: "border: 1px solid #3a2a50; border-radius: 12px; padding: 16px; background: linear-gradient(160deg, #1c162b 0%, #120e1a 60%, #0f0b1f 100%); box-shadow: 0 12px 28px #00000055;",
                             LoginPanel { auth_service: props.auth_service.clone() }
                         }
-                        
+
                         if props.auth_service.read().is_authenticated() {
-                            div { 
+                            div {
                                 style: "margin-top: 20px; border: 1px solid #3a2a50; border-radius: 12px; padding: 16px; background: linear-gradient(160deg, #1c162b 0%, #120e1a 60%, #0f0b1f 100%); box-shadow: 0 12px 28px #00000055;",
                                 h2 { style: "color: #e040fb; margin-bottom: 12px;", "API Key Management" }
-                                ApiKeyManager { auth_service: props.auth_service.clone() } 
+                                ApiKeyManager { auth_service: props.auth_service.clone() }
                             }
                         }
                     }
@@ -207,7 +207,7 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                                 div {
                                     key: "{provider.name}",
                                     style: "padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid #3a2d56; background: rgba(58,42,80,0.25);",
-                                    
+
                                     div {
                                         style: "display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;",
                                         div {
@@ -391,13 +391,13 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                 if active_tab() == SettingsTab::Security {
                     div {
                         h1 { style: "color: #ffcc00; letter-spacing: 0.02em; margin-bottom: 16px;", "Security & Signing" }
-                        
+
                         // GPG Key Management
                         div {
                             style: "border: 1px solid #3a2a50; border-radius: 12px; padding: 16px; background: linear-gradient(160deg, #1c162b 0%, #120e1a 60%, #0f0b1f 100%); box-shadow: 0 12px 28px #00000055; margin-bottom: 16px;",
-                            
+
                             h2 { style: "color: #e040fb; margin-bottom: 12px;", "🔑 GPG Keys for Package Signing" }
-                            
+
                             p { style: "color: #a99ec3; font-size: 14px; margin-bottom: 12px;",
                                 "Generate, import, or manage GPG signing keys for securely signing packages and repos."
                             }
@@ -451,9 +451,9 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                         // SSL/TLS Certificate Management
                         div {
                             style: "border: 1px solid #3a2a50; border-radius: 12px; padding: 16px; background: linear-gradient(160deg, #1c162b 0%, #120e1a 60%, #0f0b1f 100%); box-shadow: 0 12px 28px #00000055;",
-                            
+
                             h2 { style: "color: #e040fb; margin-bottom: 12px;", "🔐 SSL/TLS Certificates" }
-                            
+
                             p { style: "color: #a99ec3; font-size: 14px; margin-bottom: 12px;",
                                 "Create self-signed certificates for secure local development and repo distribution."
                             }

@@ -20,12 +20,12 @@ pub static OAUTH_RESULT: once_cell::sync::Lazy<Arc<Mutex<Option<OAuthResult>>>> 
 pub fn extract_oauth_code(url: &str) -> Option<OAuthResult> {
     // Try to parse the URL
     let parsed = Url::parse(url).ok()?;
-    
+
     // Check if this is a callback URL
     if !parsed.path().contains("auth") || !parsed.path().contains("callback") {
         return None;
     }
-    
+
     // Extract the provider from the path (e.g., /auth/google/callback)
     let path_parts: Vec<&str> = parsed.path().split('/').collect();
     let provider = if path_parts.len() >= 3 {
@@ -33,20 +33,20 @@ pub fn extract_oauth_code(url: &str) -> Option<OAuthResult> {
     } else {
         return None;
     };
-    
+
     // Extract code from query parameters
     let code = parsed
         .query_pairs()
         .find(|(key, _)| key == "code")
         .map(|(_, val)| val.into_owned())?;
-    
+
     // Extract state if available
     let state = parsed
         .query_pairs()
         .find(|(key, _)| key == "state")
         .map(|(_, val)| val.into_owned())
         .unwrap_or_default();
-    
+
     Some(OAuthResult {
         provider,
         code,
@@ -68,7 +68,10 @@ pub async fn get_and_clear_oauth_result() -> Option<OAuthResult> {
 
 /// Get OAuth result from the OAuth server
 pub async fn get_oauth_result_from_server(provider: &str) -> Option<OAuthResult> {
-    if let Some(callback) = crate::oauth_server::OAUTH_SERVER.get_callback(provider).await {
+    if let Some(callback) = crate::oauth_server::OAUTH_SERVER
+        .get_callback(provider)
+        .await
+    {
         if let Some(code) = callback.code {
             let result = OAuthResult {
                 provider: provider.to_string(),
@@ -76,7 +79,9 @@ pub async fn get_oauth_result_from_server(provider: &str) -> Option<OAuthResult>
                 state: String::new(),
             };
             // Clear the callback from the server
-            crate::oauth_server::OAUTH_SERVER.clear_callback(provider).await;
+            crate::oauth_server::OAUTH_SERVER
+                .clear_callback(provider)
+                .await;
             return Some(result);
         }
     }

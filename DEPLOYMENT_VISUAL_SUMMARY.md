@@ -227,6 +227,7 @@ User launches v0.1.0
 ## What Each Mirror Does
 
 ### GitHub Releases
+
 ```
 Strengths:
   • CDN distributed globally
@@ -246,6 +247,7 @@ Best for:
 ```
 
 ### Firebase Hosting
+
 ```
 Strengths:
   • Real-time sync capability
@@ -266,6 +268,7 @@ Best for:
 ```
 
 ### cPanel Webhosting
+
 ```
 Strengths:
   • Your domain (yourdomain.com)
@@ -287,6 +290,7 @@ Best for:
 ```
 
 ### Google Cloud Storage
+
 ```
 Strengths:
   • Reliable (Google's infrastructure)
@@ -310,7 +314,7 @@ GitHub Releases
   • Bandwidth: Free (unlimited)
   • Storage: Free (up to 2GB assets)
   • Cost: $0/year
-  
+
 Firebase Hosting
   • 5GB storage: Free tier
   • 1GB/day downloads: Free tier
@@ -362,6 +366,7 @@ These skills apply to any software project!
 ## Next Action
 
 **This week**: Deploy update server on cPanel
+
 1. SSH into cPanel
 2. Create `/public_html/kael-os/api/`
 3. Upload 4 files (see UPDATE_SERVER_CPANEL.md)

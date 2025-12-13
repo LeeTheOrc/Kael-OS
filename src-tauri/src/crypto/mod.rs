@@ -1,16 +1,16 @@
 #![allow(dead_code)]
 
+use aes_gcm::aead::consts::U12;
+use aes_gcm::Nonce;
 use aes_gcm::{
     aead::{Aead, KeyInit},
     Aes256Gcm, Key,
 };
-use aes_gcm::Nonce;
-use aes_gcm::aead::consts::U12;
+use base64::{engine::general_purpose, Engine};
 use pbkdf2::pbkdf2_hmac;
 use rand::Rng;
 use sha2::Sha256;
 use std::error::Error;
-use base64::{Engine, engine::general_purpose};
 
 const B64_ENGINE: general_purpose::GeneralPurpose = general_purpose::STANDARD;
 
@@ -55,13 +55,14 @@ pub fn encrypt_with_passphrase(
     Ok(B64_ENGINE.encode(&combined))
 }
 
-    // Decrypt data with AES-256-GCM using a passphrase
+// Decrypt data with AES-256-GCM using a passphrase
 pub fn decrypt_with_passphrase(
     encrypted_data: &str,
     passphrase: &str,
 ) -> Result<String, Box<dyn Error>> {
     // Decode base64
-    let combined = B64_ENGINE.decode(encrypted_data)
+    let combined = B64_ENGINE
+        .decode(encrypted_data)
         .map_err(|e| format!("Base64 decode failed: {}", e))?;
 
     if combined.len() < 28 {
@@ -121,7 +122,8 @@ pub fn encrypt_with_key(plaintext: &str, key: &str) -> Result<String, Box<dyn Er
 /// Decrypt with a derived key
 pub fn decrypt_with_key(encrypted_data: &str, key: &str) -> Result<String, Box<dyn Error>> {
     // Decode base64
-    let combined = B64_ENGINE.decode(encrypted_data)
+    let combined = B64_ENGINE
+        .decode(encrypted_data)
         .map_err(|e| format!("Base64 decode failed: {}", e))?;
 
     if combined.len() < 12 {

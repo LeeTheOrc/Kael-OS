@@ -1,12 +1,15 @@
+use crate::auth::{
+    exchange_google_code_for_token, firebase_sign_in_email_password,
+    firebase_sign_up_email_password, get_google_oauth_url, AuthService, User,
+};
+use crate::components::icons::SparkIcon;
+use crate::oauth_server::OAUTH_SERVER;
 use dioxus::prelude::*;
 use dioxus_desktop::{use_window, Config, DesktopService};
 use std::rc::Weak;
 use tao::dpi::LogicalSize;
 use tao::window::WindowBuilder;
 use tokio::time::{sleep, Duration};
-use crate::auth::{AuthService, User, firebase_sign_in_email_password, firebase_sign_up_email_password, get_google_oauth_url, exchange_google_code_for_token};
-use crate::components::icons::SparkIcon;
-use crate::oauth_server::OAUTH_SERVER;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct LoginProps {
@@ -79,10 +82,12 @@ fn spawn_oauth_poll(
             if let Some(callback) = OAUTH_SERVER.get_callback(&provider).await {
                 OAUTH_SERVER.clear_callback(&provider).await;
 
-                log::info!("OAuth callback received for {}: code={:?}, error={:?}", 
-                    provider, 
-                    callback.code.is_some(), 
-                    callback.error);
+                log::info!(
+                    "OAuth callback received for {}: code={:?}, error={:?}",
+                    provider,
+                    callback.code.is_some(),
+                    callback.error
+                );
 
                 if let Some(err) = callback.error {
                     log::warn!("OAuth error from provider: {}", err);
@@ -94,9 +99,9 @@ fn spawn_oauth_poll(
                         show_oauth_message.set(Some("error_empty_code".to_string()));
                         break;
                     }
-                    
+
                     log::info!("Exchanging OAuth code for {}: {}", provider, code);
-                    
+
                     let result = if provider == "google" {
                         log::debug!("Calling exchange_google_code_for_token");
                         exchange_google_code_for_token(&code).await

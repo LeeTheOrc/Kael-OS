@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
+use base64::{engine::general_purpose, Engine};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
-use base64::{engine::general_purpose, Engine};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct User {
@@ -47,8 +47,8 @@ pub fn decrypt_secret(user: &User, ciphertext_b64: &str) -> Option<String> {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EncryptedKey {
-    pub provider: String,        // "openai", "anthropic", "local", etc.
-    pub encrypted_key: String,   // base64-encoded encrypted key
+    pub provider: String,      // "openai", "anthropic", "local", etc.
+    pub encrypted_key: String, // base64-encoded encrypted key
     pub created_at: String,
 }
 
@@ -168,7 +168,11 @@ struct SignInResponse {
 }
 
 /// Call Firebase REST `signInWithIdp` to turn a third-party credential into a Firebase session.
-async fn firebase_sign_in_with_idp(post_body: String, request_uri: &str, api_key: &str) -> Result<User, String> {
+async fn firebase_sign_in_with_idp(
+    post_body: String,
+    request_uri: &str,
+    api_key: &str,
+) -> Result<User, String> {
     let url = format!(
         "https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key={}",
         api_key
@@ -182,15 +186,10 @@ async fn firebase_sign_in_with_idp(post_body: String, request_uri: &str, api_key
     });
 
     let client = reqwest::Client::new();
-    let resp = client
-        .post(&url)
-        .json(&payload)
-        .send()
-        .await
-        .map_err(|e| {
-            log::error!("Firebase IdP exchange failed: {}", e);
-            format!("Firebase IdP exchange failed: {}", e)
-        })?;
+    let resp = client.post(&url).json(&payload).send().await.map_err(|e| {
+        log::error!("Firebase IdP exchange failed: {}", e);
+        format!("Firebase IdP exchange failed: {}", e)
+    })?;
 
     if !resp.status().is_success() {
         let status = resp.status();
@@ -204,7 +203,11 @@ async fn firebase_sign_in_with_idp(post_body: String, request_uri: &str, api_key
         format!("Failed to parse Firebase IdP response: {}", e)
     })?;
 
-    log::info!("Firebase IdP response: displayName={:?}, photoUrl={:?}", data.displayName, data.photoUrl);
+    log::info!(
+        "Firebase IdP response: displayName={:?}, photoUrl={:?}",
+        data.displayName,
+        data.photoUrl
+    );
 
     let expires_in = data
         .expiresIn
@@ -227,49 +230,45 @@ async fn firebase_sign_in_with_idp(post_body: String, request_uri: &str, api_key
 }
 
 pub async fn firebase_sign_in_email_password(email: &str, password: &str) -> Result<User, String> {
-    let api_key = std::env::var("VITE_FIREBASE_API_KEY")
-        .map_err(|_| {
-            log::error!("Missing VITE_FIREBASE_API_KEY env var");
-            "Missing VITE_FIREBASE_API_KEY".to_string()
-        })?;
-    
+    let api_key = std::env::var("VITE_FIREBASE_API_KEY").map_err(|_| {
+        log::error!("Missing VITE_FIREBASE_API_KEY env var");
+        "Missing VITE_FIREBASE_API_KEY".to_string()
+    })?;
+
     let url = format!(
         "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={}",
         api_key
     );
     log::info!("Firebase sign-in URL: {}", url);
-    
+
     let body = serde_json::json!({
         "email": email,
         "password": password,
         "returnSecureToken": true
     });
-    
+
     let client = reqwest::Client::new();
-    let resp = client
-        .post(&url)
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| {
-            log::error!("Auth network error: {}", e);
-            format!("Auth network error: {}", e)
-        })?;
+    let resp = client.post(&url).json(&body).send().await.map_err(|e| {
+        log::error!("Auth network error: {}", e);
+        format!("Auth network error: {}", e)
+    })?;
 
     if !resp.status().is_success() {
         let status = resp.status();
         let text = resp.text().await.unwrap_or_default();
-        log::error!("Auth error {} (Status {}): {}", status, status.as_u16(), text);
+        log::error!(
+            "Auth error {} (Status {}): {}",
+            status,
+            status.as_u16(),
+            text
+        );
         return Err(format!("Auth error {}: {}", status.as_u16(), text));
     }
 
-    let data: SignInResponse = resp
-        .json()
-        .await
-        .map_err(|e| {
-            log::error!("Auth parse error: {}", e);
-            format!("Auth parse error: {}", e)
-        })?;
+    let data: SignInResponse = resp.json().await.map_err(|e| {
+        log::error!("Auth parse error: {}", e);
+        format!("Auth parse error: {}", e)
+    })?;
 
     let expires_in = data
         .expiresIn
@@ -298,8 +297,9 @@ pub async fn exchange_google_code_for_token(code: &str) -> Result<User, String> 
     let api_key = std::env::var("VITE_FIREBASE_API_KEY")
         .map_err(|_| "Missing VITE_FIREBASE_API_KEY".to_string())?;
 
-    let client_id = std::env::var("GOOGLE_OAUTH_CLIENT_ID")
-        .unwrap_or_else(|_| "384654392238-k02b3cvemoee9uq87pa3a3bk0gf1hbnk.apps.googleusercontent.com".to_string());
+    let client_id = std::env::var("GOOGLE_OAUTH_CLIENT_ID").unwrap_or_else(|_| {
+        "384654392238-k02b3cvemoee9uq87pa3a3bk0gf1hbnk.apps.googleusercontent.com".to_string()
+    });
     let client_secret = std::env::var("GOOGLE_OAUTH_CLIENT_SECRET").ok();
     let redirect_uri = std::env::var("GOOGLE_OAUTH_REDIRECT_URI")
         .unwrap_or_else(|_| "http://localhost:5173/auth/google/callback".to_string());
@@ -358,16 +358,22 @@ pub async fn exchange_google_code_for_token(code: &str) -> Result<User, String> 
     );
 
     let mut user = firebase_sign_in_with_idp(post_body, &redirect_uri, &api_key).await?;
-    
+
     // If we have access token, fetch user info to get profile picture
     if let Some(access_token) = access_token {
         if let Ok(profile) = fetch_google_profile(access_token).await {
-            user.photo_url = profile.get("picture").and_then(|v| v.as_str()).map(String::from);
+            user.photo_url = profile
+                .get("picture")
+                .and_then(|v| v.as_str())
+                .map(String::from);
             log::info!("Fetched Google profile picture: {:?}", user.photo_url);
         }
     }
-    
-    log::info!("Successfully exchanged Google code via Firebase for user: {}", user.email);
+
+    log::info!(
+        "Successfully exchanged Google code via Firebase for user: {}",
+        user.email
+    );
     Ok(user)
 }
 
@@ -416,7 +422,7 @@ pub async fn exchange_github_code_for_token(code: &str) -> Result<User, String> 
         ("code", code.to_string()),
         ("redirect_uri", redirect_uri.clone()),
     ];
-    
+
     let response = client
         .post("https://github.com/login/oauth/access_token")
         .header("Accept", "application/json")
@@ -427,7 +433,7 @@ pub async fn exchange_github_code_for_token(code: &str) -> Result<User, String> 
             log::error!("GitHub token exchange failed: {}", e);
             "Token exchange failed".to_string()
         })?;
-    
+
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
@@ -439,13 +445,11 @@ pub async fn exchange_github_code_for_token(code: &str) -> Result<User, String> 
         log::error!("Failed to parse GitHub token response: {}", e);
         "Failed to parse token response".to_string()
     })?;
-    
-    let access_token = token_response["access_token"]
-        .as_str()
-        .ok_or_else(|| {
-            log::error!("No access_token in GitHub response");
-            "No access_token received".to_string()
-        })?;
+
+    let access_token = token_response["access_token"].as_str().ok_or_else(|| {
+        log::error!("No access_token in GitHub response");
+        "No access_token received".to_string()
+    })?;
 
     let post_body = format!(
         "access_token={}&providerId=github.com",
@@ -453,7 +457,10 @@ pub async fn exchange_github_code_for_token(code: &str) -> Result<User, String> 
     );
 
     let user = firebase_sign_in_with_idp(post_body, &redirect_uri, &api_key).await?;
-    log::info!("Successfully exchanged GitHub code via Firebase for user: {}", user.email);
+    log::info!(
+        "Successfully exchanged GitHub code via Firebase for user: {}",
+        user.email
+    );
     Ok(user)
 }
 
@@ -461,10 +468,11 @@ fn base64_decode(s: &str) -> Result<String, Box<dyn std::error::Error>> {
     use base64::{engine::general_purpose, Engine as _};
     let bytes = general_purpose::URL_SAFE_NO_PAD.decode(s)?;
     Ok(String::from_utf8(bytes)?)
-}// Build Google OAuth URL for Firebase
+} // Build Google OAuth URL for Firebase
 pub fn get_google_oauth_url() -> Result<String, String> {
-    let client_id = std::env::var("GOOGLE_OAUTH_CLIENT_ID")
-        .unwrap_or_else(|_| "384654392238-k02b3cvemoee9uq87pa3a3bk0gf1hbnk.apps.googleusercontent.com".to_string());
+    let client_id = std::env::var("GOOGLE_OAUTH_CLIENT_ID").unwrap_or_else(|_| {
+        "384654392238-k02b3cvemoee9uq87pa3a3bk0gf1hbnk.apps.googleusercontent.com".to_string()
+    });
     let redirect_url = std::env::var("GOOGLE_OAUTH_REDIRECT_URI")
         .unwrap_or_else(|_| "http://localhost:5173/auth/google/callback".to_string());
 
@@ -481,7 +489,7 @@ pub fn get_github_oauth_url() -> Result<String, String> {
         .unwrap_or_else(|_| "Ov23liqnLH8iIZOZ8sMT".to_string());
     let redirect_url = std::env::var("GITHUB_OAUTH_REDIRECT_URI")
         .unwrap_or_else(|_| "http://localhost:5173/auth/github/callback".to_string());
-    
+
     Ok(format!(
         "https://github.com/login/oauth/authorize?client_id={}&redirect_uri={}&scope=user:email",
         client_id,
@@ -489,49 +497,45 @@ pub fn get_github_oauth_url() -> Result<String, String> {
     ))
 }
 pub async fn firebase_sign_up_email_password(email: &str, password: &str) -> Result<User, String> {
-    let api_key = std::env::var("VITE_FIREBASE_API_KEY")
-        .map_err(|_| {
-            log::error!("Missing VITE_FIREBASE_API_KEY env var");
-            "Missing VITE_FIREBASE_API_KEY".to_string()
-        })?;
-    
+    let api_key = std::env::var("VITE_FIREBASE_API_KEY").map_err(|_| {
+        log::error!("Missing VITE_FIREBASE_API_KEY env var");
+        "Missing VITE_FIREBASE_API_KEY".to_string()
+    })?;
+
     let url = format!(
         "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={}",
         api_key
     );
     log::info!("Firebase sign-up URL: {}", url);
-    
+
     let body = serde_json::json!({
         "email": email,
         "password": password,
         "returnSecureToken": true
     });
-    
+
     let client = reqwest::Client::new();
-    let resp = client
-        .post(&url)
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| {
-            log::error!("Signup network error: {}", e);
-            format!("Signup network error: {}", e)
-        })?;
+    let resp = client.post(&url).json(&body).send().await.map_err(|e| {
+        log::error!("Signup network error: {}", e);
+        format!("Signup network error: {}", e)
+    })?;
 
     if !resp.status().is_success() {
         let status = resp.status();
         let text = resp.text().await.unwrap_or_default();
-        log::error!("Signup error {} (Status {}): {}", status, status.as_u16(), text);
+        log::error!(
+            "Signup error {} (Status {}): {}",
+            status,
+            status.as_u16(),
+            text
+        );
         return Err(format!("Signup error {}: {}", status.as_u16(), text));
     }
 
-    let data: SignInResponse = resp
-        .json()
-        .await
-        .map_err(|e| {
-            log::error!("Signup parse error: {}", e);
-            format!("Signup parse error: {}", e)
-        })?;
+    let data: SignInResponse = resp.json().await.map_err(|e| {
+        log::error!("Signup parse error: {}", e);
+        format!("Signup parse error: {}", e)
+    })?;
 
     let expires_in = data
         .expiresIn

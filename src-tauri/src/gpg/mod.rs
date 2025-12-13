@@ -17,7 +17,7 @@ pub struct GpgKey {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExportedKey {
     pub key_type: String, // "private" or "public"
-    pub armored: String,   // ASCII-armored key data
+    pub armored: String,  // ASCII-armored key data
 }
 
 /// List all GPG secret keys on the system

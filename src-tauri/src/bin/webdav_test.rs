@@ -27,7 +27,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .danger_accept_invalid_certs(false)
         .build()?;
 
-    let url = format!("{}/{}", base_url.trim_end_matches('/'), remote_path.trim_start_matches('/'));
+    let url = format!(
+        "{}/{}",
+        base_url.trim_end_matches('/'),
+        remote_path.trim_start_matches('/')
+    );
     let bytes = std::fs::read(&local_file)?;
 
     let resp = client

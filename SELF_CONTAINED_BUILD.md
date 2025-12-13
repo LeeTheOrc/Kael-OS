@@ -1,22 +1,27 @@
 # Self-Contained Build Configuration
 
 ## Overview
+
 This document describes how to build Kael-OS as a fully self-contained application with all dependencies bundled, so it works everywhere without requiring system dependencies.
 
 ## Build Types
 
 ### 1. Development Build
+
 ```bash
 cargo build
 ```
+
 - Fast compilation, unoptimized
 - Produces `target/debug/kael-os`
 - Use for testing during development
 
 ### 2. Release Build (Optimized)
+
 ```bash
 cargo build --release
 ```
+
 - Slower compilation, highly optimized
 - Produces `target/release/kael-os`
 - ~80% smaller and much faster execution
@@ -25,6 +30,7 @@ cargo build --release
 ## Platform-Specific Builds
 
 ### Windows (.msi installer)
+
 ```bash
 # Install WiX toolset first
 # https://wixtoolset.org/releases/
@@ -39,6 +45,7 @@ wix build --output kael-os.msi --package target/release/kael-os.exe
 **Result**: `kael-os.msi` - Single-file installer, no dependencies needed on user machine
 
 ### Linux (.AppImage)
+
 ```bash
 # Install appimagetool first
 # https://github.com/AppImage/AppImageKit/releases
@@ -72,6 +79,7 @@ chmod +x kael-os-x86_64.AppImage
 **Result**: `kael-os-x86_64.AppImage` - Portable, no installation needed, works on any Linux
 
 ### macOS (.dmg)
+
 ```bash
 # Requires macOS/Xcode
 
@@ -92,7 +100,9 @@ hdiutil create -volname "Kael-OS" -srcfolder kael-os.app -ov -format UDZO kael-o
 ## Self-Contained Features
 
 ### 1. Bundled Resources
+
 The app includes:
+
 - ✅ All Rust dependencies (statically linked)
 - ✅ Crypto libraries (AES-256-GCM)
 - ✅ GPG support (system call to `gpg`)
@@ -102,20 +112,26 @@ The app includes:
 - ✅ Terminal emulation (via PTY)
 
 ### 2. Runtime Requirements
+
 **Minimal system dependencies:**
+
 - None for basic functionality (fully self-contained binary)
 - `gpg` command (optional, only if using GPG signing)
 - `curl` or similar (optional, for WebDAV transfers)
 - Internet connection (optional, for cloud AI providers)
 
 ### 3. Configuration Files
+
 Location: `~/.config/kael-os/` (Linux/macOS) or `%APPDATA%\kael-os\` (Windows)
+
 - `config.toml` - App settings
 - `credentials.json` - Encrypted API keys
 - `database.db` - Local SQLite database
 
 ### 4. Environment Variables
+
 Optional (app works without these):
+
 - `OLLAMA_API_URL` - Local Ollama instance
 - `FIREBASE_PROJECT_ID` - Firebase configuration
 - `GOOGLE_API_KEY` - Google Gemini API
@@ -124,6 +140,7 @@ Optional (app works without these):
 ## Build Optimization Flags
 
 ### Cargo.toml Release Profile
+
 ```toml
 [profile.release]
 opt-level = 3           # Maximum optimization
@@ -133,12 +150,14 @@ strip = true            # Remove symbols
 ```
 
 ### File Size Targets
+
 - **Debug build**: ~150MB
 - **Release build (unstripped)**: ~45MB
 - **Release build (stripped)**: ~25MB
 - **Minimal (with UPX)**: ~8MB
 
 ### Strip Binary
+
 ```bash
 # Linux
 strip target/release/kael-os
@@ -180,7 +199,7 @@ name: Build Release
 
 on:
   push:
-    tags: ['v*']
+    tags: ["v*"]
 
 jobs:
   build-linux:
@@ -234,6 +253,7 @@ jobs:
 ## Deployment Scripts
 
 ### Linux/macOS Install Script
+
 ```bash
 #!/bin/bash
 set -e
@@ -248,6 +268,7 @@ kael-os --version
 ```
 
 ### Windows Install Script (PowerShell)
+
 ```powershell
 $Version = "0.2.0"
 $Arch = if ([Environment]::Is64BitOperatingSystem) { "x64" } else { "x86" }
@@ -272,10 +293,10 @@ otool -L target/release/kael-os  # macOS
 ## Success Criteria
 
 ✅ Your build is fully self-contained when:
+
 1. **Single binary** - No separate runtime or config needed
 2. **No install** - Can copy binary to any location and run
 3. **Works offline** - Basic features work without internet
 4. **Fast startup** - < 1 second from launch to ready
 5. **Portable** - Works on fresh OS without additional packages
 6. **Hashable** - Same build produces same binary (reproducible)
-

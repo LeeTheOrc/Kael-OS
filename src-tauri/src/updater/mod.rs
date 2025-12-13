@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
 // src-tauri/src/updater/mod.rs
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VersionInfo {
@@ -101,9 +101,7 @@ pub async fn check_for_updates(
 }
 
 /// Fetch full version manifest
-pub async fn fetch_manifest(
-    manifest_url: &str,
-) -> Result<VersionInfo, Box<dyn Error>> {
+pub async fn fetch_manifest(manifest_url: &str) -> Result<VersionInfo, Box<dyn Error>> {
     let client = reqwest::Client::new();
     let response = client
         .get(manifest_url)

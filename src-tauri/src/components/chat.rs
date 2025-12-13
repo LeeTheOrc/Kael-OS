@@ -2,8 +2,8 @@ use crate::components::icons::{PanelIcon, SendIcon, SparkIcon};
 #[allow(unused_imports)]
 use crate::llm::{self, LLMProvider, LLMRequest};
 use crate::terminal::PtyTerminal;
-use dioxus::prelude::*;
 use dioxus::events::Key;
+use dioxus::prelude::*;
 use serde::{Deserialize, Serialize};
 
 // Detect if query is system-related and should use local Ollama
@@ -11,26 +11,79 @@ fn is_system_query(s: &str) -> bool {
     let s_lower = s.to_lowercase();
     let system_keywords = [
         // Package management
-        "pacman", "paru", "yay", "aur", "package", "install", "update", "upgrade",
-        // System administration  
-        "systemd", "systemctl", "journalctl", "service", "daemon", "boot",
+        "pacman",
+        "paru",
+        "yay",
+        "aur",
+        "package",
+        "install",
+        "update",
+        "upgrade",
+        // System administration
+        "systemd",
+        "systemctl",
+        "journalctl",
+        "service",
+        "daemon",
+        "boot",
         // KDE/Plasma
-        "kde", "plasma", "kwin", "krunner", "konsole", "dolphin", "kconfig",
+        "kde",
+        "plasma",
+        "kwin",
+        "krunner",
+        "konsole",
+        "dolphin",
+        "kconfig",
         // Desktop/Display
-        "wayland", "x11", "xorg", "display", "screen", "monitor", "compositor",
+        "wayland",
+        "x11",
+        "xorg",
+        "display",
+        "screen",
+        "monitor",
+        "compositor",
         // File system
-        "filesystem", "partition", "mount", "fstab", "disk", "df", "du",
+        "filesystem",
+        "partition",
+        "mount",
+        "fstab",
+        "disk",
+        "df",
+        "du",
         // System info
-        "uname", "arch", "kernel", "cpu", "memory", "ram", "hardware",
+        "uname",
+        "arch",
+        "kernel",
+        "cpu",
+        "memory",
+        "ram",
+        "hardware",
         // Terminal/Shell
-        "terminal", "shell", "bash", "zsh", "fish", "pty", "tty",
+        "terminal",
+        "shell",
+        "bash",
+        "zsh",
+        "fish",
+        "pty",
+        "tty",
         // System commands
-        "chmod", "chown", "sudo", "permissions", "grep", "sed", "awk",
+        "chmod",
+        "chown",
+        "sudo",
+        "permissions",
+        "grep",
+        "sed",
+        "awk",
         // How are you / system status
-        "how are you", "status", "health", "working",
+        "how are you",
+        "status",
+        "health",
+        "working",
     ];
-    
-    system_keywords.iter().any(|keyword| s_lower.contains(keyword))
+
+    system_keywords
+        .iter()
+        .any(|keyword| s_lower.contains(keyword))
 }
 
 // Simple classifier: treat as command if it looks like a shell command
@@ -43,13 +96,75 @@ fn is_command(s: &str) -> bool {
         return true;
     }
     let verbs = [
-        "cd", "ls", "pwd", "cat", "echo", "touch", "rm", "mv", "cp", "mkdir", "rmdir",
-        "git", "cargo", "python", "pip", "rustc", "curl", "wget", "tar", "zip", "unzip",
-        "grep", "sed", "awk", "find", "ps", "top", "kill", "chmod", "chown", "sudo",
-        "pacman", "apt", "apt-get", "yum", "brew", "dnf", "zypper", "npm", "yarn", "pnpm",
-        "node", "docker", "docker-compose", "systemctl", "journalctl", "service", "which",
-        "whereis", "file", "lsof", "make", "ninja", "cmake", "gcc", "clang", "go", "ruby",
-        "php", "test", "[ ", "head", "tail", "wc", "sort", "uniq", "cut", "paste", "tr",
+        "cd",
+        "ls",
+        "pwd",
+        "cat",
+        "echo",
+        "touch",
+        "rm",
+        "mv",
+        "cp",
+        "mkdir",
+        "rmdir",
+        "git",
+        "cargo",
+        "python",
+        "pip",
+        "rustc",
+        "curl",
+        "wget",
+        "tar",
+        "zip",
+        "unzip",
+        "grep",
+        "sed",
+        "awk",
+        "find",
+        "ps",
+        "top",
+        "kill",
+        "chmod",
+        "chown",
+        "sudo",
+        "pacman",
+        "apt",
+        "apt-get",
+        "yum",
+        "brew",
+        "dnf",
+        "zypper",
+        "npm",
+        "yarn",
+        "pnpm",
+        "node",
+        "docker",
+        "docker-compose",
+        "systemctl",
+        "journalctl",
+        "service",
+        "which",
+        "whereis",
+        "file",
+        "lsof",
+        "make",
+        "ninja",
+        "cmake",
+        "gcc",
+        "clang",
+        "go",
+        "ruby",
+        "php",
+        "test",
+        "[ ",
+        "head",
+        "tail",
+        "wc",
+        "sort",
+        "uniq",
+        "cut",
+        "paste",
+        "tr",
     ];
     let first = s.split_whitespace().next().unwrap_or("");
     verbs.contains(&first)
@@ -80,13 +195,13 @@ pub struct ChatProps {
 pub fn ChatPanel(mut props: ChatProps) -> Element {
     let load_messages = || -> Vec<Message> {
         if let Ok(json) = std::fs::read_to_string("/tmp/kael_chat_history.json") {
-            serde_json::from_str(&json).unwrap_or_else(|_| vec![
-                Message {
+            serde_json::from_str(&json).unwrap_or_else(|_| {
+                vec![Message {
                     author: "Kael".to_string(),
                     text: "Greetings, Architect! I am Kael, your partner in creation.".to_string(),
                     is_streaming: false,
-                }
-            ])
+                }]
+            })
         } else {
             vec![Message {
                 author: "Kael".to_string(),
@@ -116,7 +231,9 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
             let local_ok = llm::ping_local().await;
             if !local_ok {
                 let mut current = msgs.write();
-                let already_noted = current.iter().any(|m| m.author == "Kael" && m.text.contains("Local AI is not responding"));
+                let already_noted = current
+                    .iter()
+                    .any(|m| m.author == "Kael" && m.text.contains("Local AI is not responding"));
                 if !already_noted {
                     current.push(Message {
                         author: "Kael".to_string(),
@@ -176,7 +293,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                 } else {
                     LLMProvider::Ollama // Default to Ollama (can be changed based on settings)
                 };
-                
+
                 // Build fallback chain - try other providers if primary fails
                 let fallback_providers = vec![
                     (LLMProvider::CopilotCLI, None), // Try CLI first (no key needed)
@@ -186,7 +303,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                     (LLMProvider::Office365AI, None),
                     (LLMProvider::GoogleOneAI, None),
                 ];
-                
+
                 let req = LLMRequest {
                     provider: primary_provider,
                     model: String::new(), // resolved per provider in fallback helper
@@ -194,7 +311,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                     api_key: None,
                     system: Some(llm::get_kael_system_prompt()),
                 };
-                
+
                 let user_ref = user_opt.as_ref();
                 match llm::send_request_with_fallback(req, user_ref, fallback_providers).await {
                     Ok(res) => {
@@ -219,7 +336,6 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
         user_input.set(String::new());
     };
 
-
     // Simple classifier: treat as command if it looks like a shell command
     let is_command = |s: &str| {
         let s = s.trim();
@@ -230,13 +346,75 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
             return true;
         }
         let verbs = [
-            "cd", "ls", "pwd", "cat", "echo", "touch", "rm", "mv", "cp", "mkdir", "rmdir",
-            "git", "cargo", "python", "pip", "rustc", "curl", "wget", "tar", "zip", "unzip",
-            "grep", "sed", "awk", "find", "ps", "top", "kill", "chmod", "chown", "sudo",
-            "pacman", "apt", "apt-get", "yum", "brew", "dnf", "zypper", "npm", "yarn", "pnpm",
-            "node", "docker", "docker-compose", "systemctl", "journalctl", "service", "which",
-            "whereis", "file", "lsof", "make", "ninja", "cmake", "gcc", "clang", "go", "ruby",
-            "php", "test", "[ ", "head", "tail", "wc", "sort", "uniq", "cut", "paste", "tr",
+            "cd",
+            "ls",
+            "pwd",
+            "cat",
+            "echo",
+            "touch",
+            "rm",
+            "mv",
+            "cp",
+            "mkdir",
+            "rmdir",
+            "git",
+            "cargo",
+            "python",
+            "pip",
+            "rustc",
+            "curl",
+            "wget",
+            "tar",
+            "zip",
+            "unzip",
+            "grep",
+            "sed",
+            "awk",
+            "find",
+            "ps",
+            "top",
+            "kill",
+            "chmod",
+            "chown",
+            "sudo",
+            "pacman",
+            "apt",
+            "apt-get",
+            "yum",
+            "brew",
+            "dnf",
+            "zypper",
+            "npm",
+            "yarn",
+            "pnpm",
+            "node",
+            "docker",
+            "docker-compose",
+            "systemctl",
+            "journalctl",
+            "service",
+            "which",
+            "whereis",
+            "file",
+            "lsof",
+            "make",
+            "ninja",
+            "cmake",
+            "gcc",
+            "clang",
+            "go",
+            "ruby",
+            "php",
+            "test",
+            "[ ",
+            "head",
+            "tail",
+            "wc",
+            "sort",
+            "uniq",
+            "cut",
+            "paste",
+            "tr",
         ];
         let first = s.split_whitespace().next().unwrap_or("");
         verbs.contains(&first)
@@ -346,24 +524,24 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                             if input_text.trim().is_empty() {
                                 return;
                             }
-                            
+
                             // Check if it's a command
                             if is_command(&input_text) {
-                                let cmd = if input_text.starts_with('!') { 
-                                    input_text.trim_start_matches('!').to_string() 
-                                } else { 
-                                    input_text.clone() 
+                                let cmd = if input_text.starts_with('!') {
+                                    input_text.trim_start_matches('!').to_string()
+                                } else {
+                                    input_text.clone()
                                 };
-                                
+
                                 // Show command in chat if echo enabled
                                 if echo_commands() {
-                                    messages.write().push(Message { 
-                                        author: "Architect".to_string(), 
-                                        text: input_text.clone(), 
-                                        is_streaming: false 
+                                    messages.write().push(Message {
+                                        author: "Architect".to_string(),
+                                        text: input_text.clone(),
+                                        is_streaming: false
                                     });
                                 }
-                                
+
                                 // Handle sudo separately
                                 if cmd.starts_with("sudo ") || cmd == "sudo" {
                                     sudo_pending.set(Some(cmd.clone()));
@@ -396,7 +574,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                     } else {
                                         llm::LLMProvider::Ollama
                                     };
-                                    
+
                                     let req = llm::LLMRequest {
                                         provider,
                                         model: "mistral".to_string(),
@@ -476,22 +654,22 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                             if input_text.trim().is_empty() {
                                 return;
                             }
-                            
+
                             if is_command(&input_text) {
-                                let cmd = if input_text.starts_with('!') { 
-                                    input_text.trim_start_matches('!').to_string() 
-                                } else { 
-                                    input_text.clone() 
+                                let cmd = if input_text.starts_with('!') {
+                                    input_text.trim_start_matches('!').to_string()
+                                } else {
+                                    input_text.clone()
                                 };
-                                
+
                                 if echo_commands() {
-                                    messages.write().push(Message { 
-                                        author: "Architect".to_string(), 
-                                        text: input_text.clone(), 
-                                        is_streaming: false 
+                                    messages.write().push(Message {
+                                        author: "Architect".to_string(),
+                                        text: input_text.clone(),
+                                        is_streaming: false
                                     });
                                 }
-                                
+
                                 if cmd.starts_with("sudo ") || cmd == "sudo" {
                                     sudo_pending.set(Some(cmd.clone()));
                                     props.current_cmd.set(cmd);
@@ -507,10 +685,10 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                 }
                             } else {
                                 // Send to LLM as chat
-                                messages.write().push(Message { 
-                                    author: "Architect".to_string(), 
-                                    text: input_text.clone(), 
-                                    is_streaming: false 
+                                messages.write().push(Message {
+                                    author: "Architect".to_string(),
+                                    text: input_text.clone(),
+                                    is_streaming: false
                                 });
                                 save_messages(&messages.read());
                                 let mut msgs = messages.clone();
@@ -522,7 +700,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                     } else {
                                         llm::LLMProvider::Ollama
                                     };
-                                    
+
                                     let req = llm::LLMRequest {
                                         provider,
                                         model: "mistral".to_string(),

@@ -3,6 +3,7 @@
 ## 📱 Platform Decision: React Native vs Flutter vs Kotlin
 
 ### Comparison:
+
 ```
                 React Native    Flutter         Kotlin/Jetpack
 ─────────────────────────────────────────────────────────────
@@ -18,6 +19,7 @@ Code Sharing    Partial (logic) Partial (logic) No
 ### Recommendation: **React Native** (leverages your TypeScript skills)
 
 **Why:**
+
 - You already know JavaScript/TypeScript
 - Can share business logic with Dioxus
 - Strong Firebase integration
@@ -63,6 +65,7 @@ Code Sharing    Partial (logic) Partial (logic) No
 ## 📋 Implementation Timeline
 
 ### Week 1-2: Project Setup
+
 - [ ] Initialize React Native project: `npx react-native init KaelOS`
 - [ ] Install core dependencies:
   - `@react-navigation/native` (navigation)
@@ -72,6 +75,7 @@ Code Sharing    Partial (logic) Partial (logic) No
   - `react-native-webview` (OAuth handling)
 
 ### Week 2-3: Authentication & Core UI
+
 - [ ] Implement OAuth flow:
   - Google login with `react-native-google-signin`
   - GitHub login via WebView
@@ -84,24 +88,28 @@ Code Sharing    Partial (logic) Partial (logic) No
 - [ ] Setup dark theme (match desktop)
 
 ### Week 3-4: Firebase Integration
+
 - [ ] Connect Firestore for chat history
 - [ ] Implement real-time message sync
 - [ ] Add offline persistence
 - [ ] Store API keys encrypted in Cloud Storage
 
 ### Week 4-5: Terminal & Advanced Features
+
 - [ ] Research Android PTY libraries (harder than desktop)
 - [ ] Implement limited terminal (commands only, no full shell)
 - [ ] Add command suggestions
 - [ ] Show output in scrollable view
 
 ### Week 5-6: GPG & SSL Management
+
 - [ ] Create native bridge to Android's GPG libraries
 - [ ] List system GPG keys
 - [ ] Export/import encrypted keys via Firebase
 - [ ] Show SSL certificate info
 
 ### Week 6-7: Testing & Distribution
+
 - [ ] Build APK for sideloading
 - [ ] Create AAB for Google Play
 - [ ] Setup Firebase App Distribution for beta
@@ -156,6 +164,7 @@ kael-os-mobile/
 ## 📦 Dependencies
 
 ### Core
+
 ```json
 {
   "react": "^18.2.0",
@@ -165,6 +174,7 @@ kael-os-mobile/
 ```
 
 ### Navigation & UI
+
 ```json
 {
   "@react-navigation/native": "^6.1.9",
@@ -177,6 +187,7 @@ kael-os-mobile/
 ```
 
 ### Firebase
+
 ```json
 {
   "firebase": "^10.6.0",
@@ -189,6 +200,7 @@ kael-os-mobile/
 ```
 
 ### Authentication
+
 ```json
 {
   "react-native-google-signin": "^12.2.0",
@@ -198,6 +210,7 @@ kael-os-mobile/
 ```
 
 ### Storage & Encryption
+
 ```json
 {
   "@react-native-async-storage/async-storage": "^1.21.0",
@@ -207,6 +220,7 @@ kael-os-mobile/
 ```
 
 ### Development
+
 ```json
 {
   "@react-native-community/eslint-config": "^3.2.0",
@@ -218,35 +232,38 @@ kael-os-mobile/
 ## 🔐 Security on Android
 
 ### Secure Storage:
+
 ```typescript
-import * as Keychain from 'react-native-keychain';
+import * as Keychain from "react-native-keychain";
 
 // Store Firebase id_token securely
-await Keychain.setGenericPassword('user_id_token', token, {
-  service: 'com.leetheorc.kaelosmobile.auth',
+await Keychain.setGenericPassword("user_id_token", token, {
+  service: "com.leetheorc.kaelosmobile.auth",
   securityLevel: Keychain.SecurityLevel.VeryStrong,
 });
 
 // Retrieve for encryption
 const token = await Keychain.getGenericPassword({
-  service: 'com.leetheorc.kaelosmobile.auth',
+  service: "com.leetheorc.kaelosmobile.auth",
 });
 ```
 
 ### Encryption:
+
 ```typescript
-import { encrypt, decrypt } from './encryptionService';
+import { encrypt, decrypt } from "./encryptionService";
 
 // Encrypt API keys before storing
 const encrypted = await encrypt(apiKey, idToken);
-await Firestore.collection('users')
+await Firestore.collection("users")
   .doc(uid)
-  .collection('api_keys')
-  .doc('mistral')
+  .collection("api_keys")
+  .doc("mistral")
   .set({ value: encrypted });
 ```
 
 ### APK Signing:
+
 ```bash
 # Generate keystore
 keytool -genkey -v -keystore ~/kael-os.keystore \
@@ -261,6 +278,7 @@ jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
 ## 📤 Distribution
 
 ### Google Play Store:
+
 1. Create Google Play developer account ($25 one-time)
 2. Generate AAB (Android App Bundle):
    ```bash
@@ -270,6 +288,7 @@ jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
 4. Set up staged rollout (5% → 25% → 100%)
 
 ### Firebase App Distribution (Beta):
+
 ```bash
 firebase appdistribution:distribute app-release.apk \
   --app 1:623895641528:android:abc123... \
@@ -277,11 +296,13 @@ firebase appdistribution:distribute app-release.apk \
 ```
 
 ### F-Droid (Open Source):
+
 1. Fork F-Droid repo
 2. Add metadata.json
 3. Submit to F-Droid review
 
 ### Sideload (Direct download):
+
 - Host APK on GitHub releases
 - Users download + install manually
 - Update via in-app update mechanism
@@ -289,6 +310,7 @@ firebase appdistribution:distribute app-release.apk \
 ## 🔄 Shared Code Strategy
 
 ### Services (shared logic):
+
 ```typescript
 // src/services/authService.ts (shared between React/Dioxus)
 export interface User {
@@ -303,6 +325,7 @@ export async function loginWithGoogle(idToken: string): Promise<User> {
 ```
 
 ### Types (shared):
+
 ```typescript
 // src/types/index.ts
 export interface Message {
@@ -321,6 +344,7 @@ export interface ChatSession {
 ## 🚀 Native Modules (Kotlin)
 
 ### PTY Module (Limited terminal):
+
 ```kotlin
 // android/app/src/main/java/com/leetheorc/kaelosmobile/modules/PTYModule.kt
 package com.leetheorc.kaelosmobile.modules
@@ -344,6 +368,7 @@ class PTYModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMod
 ```
 
 ### Secure Storage Module:
+
 ```kotlin
 // android/app/src/main/java/com/leetheorc/kaelosmobile/modules/SecureStorageModule.kt
 import android.security.keystore.KeyGenParameterSpec
@@ -369,19 +394,21 @@ class SecureStorageModule(reactContext: ReactApplicationContext) : ReactContextB
 ## 🧪 Testing Strategy
 
 ### Unit Tests:
+
 ```typescript
 // src/services/__tests__/authService.test.ts
-import { loginWithGoogle } from '../authService';
+import { loginWithGoogle } from "../authService";
 
-describe('Auth Service', () => {
-  test('should login with valid Google token', async () => {
-    const user = await loginWithGoogle('valid_token');
+describe("Auth Service", () => {
+  test("should login with valid Google token", async () => {
+    const user = await loginWithGoogle("valid_token");
     expect(user.uid).toBeDefined();
   });
 });
 ```
 
 ### E2E Tests:
+
 - Use Detox for automated testing
 - Test chat message flow
 - Test OAuth flow
@@ -400,6 +427,7 @@ describe('Auth Service', () => {
 ## 📋 Android Specific Considerations
 
 1. **Permissions** (AndroidManifest.xml):
+
    ```xml
    <uses-permission android:name="android.permission.INTERNET" />
    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
