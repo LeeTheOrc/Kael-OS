@@ -5,6 +5,7 @@ mod components;
 mod crypto;
 mod db;
 mod firebase;
+mod github;
 mod gpg;
 mod llm;
 mod oauth_server;

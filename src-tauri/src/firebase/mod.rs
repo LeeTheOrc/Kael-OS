@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+pub mod uploader;
+
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 

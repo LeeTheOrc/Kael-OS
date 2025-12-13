@@ -2820,6 +2820,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "gloo-timers",
+ "hmac",
  "kael-terminal",
  "log",
  "once_cell",

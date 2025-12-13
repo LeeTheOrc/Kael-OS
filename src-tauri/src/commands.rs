@@ -2,6 +2,8 @@ use crate::state::{ChatMessage, KaelConfig};
 use crate::webdav::{WebDavClient, WebDavConfig};
 use crate::version::Version;
 use crate::app_scaffold::AppTemplate;
+use crate::firebase::uploader::FirebaseUploader;
+use crate::github::uploader::GitHubUploader;
 use std::path::Path;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
@@ -310,5 +312,59 @@ pub fn scaffold_app(
         "App '{}' scaffolded at {} with versioning system v0.0.1-alpha.1",
         app_name, app_path
     ))
+}
+
+/// Upload a file to Firebase Storage using Google Cloud Storage API
+#[tauri::command]
+pub async fn firebase_upload_file(
+    bucket: String,
+    sa_json_path: String,
+    local_path: String,
+    remote_path: String,
+) -> Result<String, String> {
+    let uploader = FirebaseUploader::new(bucket, Path::new(&sa_json_path))
+        .map_err(|e| format!("Firebase config error: {}", e))?;
+
+    let local = Path::new(&local_path);
+    uploader
+        .upload_file(local, &remote_path)
+        .await
+        .map_err(|e| format!("Firebase upload failed: {}", e))
+}
+
+/// Create a GitHub release and upload assets
+#[tauri::command]
+pub async fn github_create_release(
+    owner: String,
+    repo: String,
+    token: String,
+    tag: String,
+    name: String,
+    body: String,
+) -> Result<u64, String> {
+    let uploader = GitHubUploader::new(owner, repo, token);
+    let release = uploader
+        .create_or_get_release(&tag, &name, &body)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(release.id)
+}
+
+/// Upload an asset to a GitHub release
+#[tauri::command]
+pub async fn github_upload_asset(
+    owner: String,
+    repo: String,
+    token: String,
+    release_id: u64,
+    file_path: String,
+    file_name: String,
+) -> Result<String, String> {
+    let uploader = GitHubUploader::new(owner, repo, token);
+    let path = Path::new(&file_path);
+    uploader
+        .upload_asset(release_id, path, &file_name)
+        .await
+        .map_err(|e| e.to_string())
 }
 
