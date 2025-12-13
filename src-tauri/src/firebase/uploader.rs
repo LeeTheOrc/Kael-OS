@@ -103,7 +103,7 @@ impl FirebaseUploader {
             .await?;
 
         if response.status().is_success() {
-            let json: serde_json::Value = response.json().await?;
+            let _json: serde_json::Value = response.json().await?;
             let public_url = format!(
                 "https://storage.googleapis.com/{}/{}",
                 self.bucket, remote_path

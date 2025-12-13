@@ -52,3 +52,56 @@ pub struct Script {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum AppStatus {
+    #[serde(rename = "making")]
+    Making,
+    #[serde(rename = "want")]
+    Want,
+    #[serde(rename = "testing")]
+    Testing,
+}
+
+impl AppStatus {
+    pub fn color(&self) -> &'static str {
+        match self {
+            AppStatus::Making => "#e040fb",  // Magenta - actively working
+            AppStatus::Want => "#ffcc00",    // Yellow - planned/wanted
+            AppStatus::Testing => "#7aebbe", // Cyan - beta testing
+        }
+    }
+
+    pub fn label(&self) -> &'static str {
+        match self {
+            AppStatus::Making => "Making",
+            AppStatus::Want => "Want to Make",
+            AppStatus::Testing => "Testing",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct AppProject {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub status: AppStatus,
+    pub version: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+impl AppProject {
+    pub fn new(name: String, description: String, status: AppStatus) -> Self {
+        Self {
+            id: Uuid::new_v4().to_string(),
+            name,
+            description,
+            status,
+            version: "0.0.1-alpha.1".to_string(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+}

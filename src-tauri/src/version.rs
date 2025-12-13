@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! Version management module for Kael-OS
 //! Reads version.json and provides version info to the app
 

@@ -1,4 +1,6 @@
 // Terminal shim for the UI: sync API backed by PTY crate
+#![allow(dead_code)]
+
 mod pty_manager;
 pub use pty_manager::PtyTerminal;
 

@@ -84,6 +84,7 @@ pub fn PanelIcon(props: SvgIconProps) -> Element {
     }
 }
 #[allow(non_snake_case)]
+#[allow(dead_code)]
 pub fn KaelAvatar() -> Element {
     rsx! {
         div {
@@ -112,6 +113,7 @@ pub fn KaelSigilIcon(props: SvgIconProps) -> Element {
 }
 
 #[allow(non_snake_case)]
+#[allow(dead_code)]
 pub fn ArchitectAvatar() -> Element {
     rsx! {
         div {

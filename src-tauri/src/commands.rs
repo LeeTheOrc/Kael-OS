@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::state::{ChatMessage, KaelConfig};
 use crate::webdav::{WebDavClient, WebDavConfig};
 use crate::version::Version;

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! App scaffolding module for creating new versioned projects
 //! When users create a new app in Kael-OS, it automatically inherits the versioning system
 
