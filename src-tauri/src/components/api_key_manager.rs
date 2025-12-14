@@ -1,5 +1,6 @@
 use crate::auth::AuthService;
 use crate::firebase::{self, ApiKey};
+use crate::llm::{self, LLMProvider, LLMRequest};
 use dioxus::prelude::*;
 
 #[derive(Props, Clone, PartialEq)]
@@ -12,6 +13,8 @@ pub fn ApiKeyManager(props: ApiKeyManagerProps) -> Element {
     let mut key_name = use_signal(String::new);
     let mut key_value = use_signal(String::new);
     let mut error_message = use_signal(String::new);
+    let mut success_message = use_signal(String::new);
+    let mut test_status = use_signal(String::new);
     let api_keys = use_signal(Vec::<ApiKey>::new);
 
     let auth = props.auth_service.read();
@@ -39,25 +42,96 @@ pub fn ApiKeyManager(props: ApiKeyManagerProps) -> Element {
             if !error_message().is_empty() {
                 p { class: "text-red-400 text-sm mb-2", "{error_message}" }
             }
+            
+            if !success_message().is_empty() {
+                p { class: "text-green-400 text-sm mb-2", "{success_message}" }
+            }
+            
+            if !test_status().is_empty() {
+                p { class: "text-yellow-400 text-sm mb-2", "{test_status}" }
+            }
 
             // Form to add a new key
             form {
                 class: "flex flex-col gap-2",
                 onsubmit: move |_ev| {
                     if let Some(user) = user_signal().clone() {
+                        let name = key_name();
+                        let value = key_value();
                         let mut api_keys_writer = api_keys;
+                        let mut test_signal = test_status.clone();
+                        let mut error_signal = error_message.clone();
+                        let mut success_signal = success_message.clone();
+                        
+                        test_signal.set(format!("🔐 Saving key '{}'...", name));
+                        error_signal.set(String::new());
+                        success_signal.set(String::new());
+                        
                         spawn(async move {
-                            match firebase::save_api_key(&user, &key_name(), &key_value()).await {
+                            // Save the key first
+                            match firebase::save_api_key(&user, &name, &value).await {
                                 Ok(_) => {
+                                    test_signal.set(format!("✅ Saved! Testing '{}'...", name));
+                                    
+                                    // Test the key based on provider name
+                                    let test_result = match name.as_str() {
+                                        "Mistral AI" => {
+                                            let req = LLMRequest {
+                                                provider: LLMProvider::Mistral,
+                                                model: String::new(),
+                                                prompt: "ping".to_string(),
+                                                api_key: Some(value.clone()),
+                                                system: Some("Reply with 'ok'".to_string()),
+                                            };
+                                            llm::send_request_with_fallback(req, Some(&user), vec![]).await
+                                        },
+                                        "Google Gemini" => {
+                                            let req = LLMRequest {
+                                                provider: LLMProvider::Gemini,
+                                                model: String::new(),
+                                                prompt: "ping".to_string(),
+                                                api_key: Some(value.clone()),
+                                                system: Some("Reply with 'ok'".to_string()),
+                                            };
+                                            llm::send_request_with_fallback(req, Some(&user), vec![]).await
+                                        },
+                                        _ => {
+                                            // For other providers, just mark as saved
+                                            test_signal.set(format!("✅ '{}' saved (validation not implemented for this provider)", name));
+                                            match firebase::get_api_keys(&user).await {
+                                                Ok(keys) => api_keys_writer.set(keys),
+                                                Err(e) => error_signal.set(e),
+                                            }
+                                            key_name.set(String::new());
+                                            key_value.set(String::new());
+                                            return;
+                                        }
+                                    };
+                                    
+                                    // Show test results
+                                    match test_result {
+                                        Ok(_) => {
+                                            success_signal.set(format!("✅ '{}' is working correctly!", name));
+                                            test_signal.set(String::new());
+                                        },
+                                        Err(e) => {
+                                            error_signal.set(format!("⚠️ Key saved but test failed: {}", e));
+                                            test_signal.set(String::new());
+                                        }
+                                    }
+                                    
                                     // Refresh the list of keys
                                     match firebase::get_api_keys(&user).await {
                                         Ok(keys) => api_keys_writer.set(keys),
-                                        Err(e) => error_message.set(e),
+                                        Err(e) => error_signal.set(e),
                                     }
                                     key_name.set(String::new());
                                     key_value.set(String::new());
                                 },
-                                Err(e) => error_message.set(e),
+                                Err(e) => {
+                                    error_signal.set(format!("❌ Failed to save: {}", e));
+                                    test_signal.set(String::new());
+                                }
                             }
                         });
                     }
