@@ -959,11 +959,11 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                     log::info!("📍 Primary provider: {:?}", primary_provider);
 
                                     // Fallback chain of cloud providers (keys loaded lazily from Firebase)
+                                    // Note: CopilotCLI is deprecated as of Sept 2025
                                     let fallback_providers = vec![
                                         (llm::LLMProvider::Mistral, None),
                                         (llm::LLMProvider::Gemini, None),
                                         (llm::LLMProvider::Copilot, None),
-                                        (llm::LLMProvider::CopilotCLI, None),
                                     ];
 
                                     let req = llm::LLMRequest {
