@@ -15,7 +15,7 @@ ARCHIVE_NAME=${ARCHIVE_NAME:-kael-os-source-$(date +%Y%m%d-%H%M%S).tar.gz}
 mkdir -p "$ARCHIVE_DIR"
 
 echo "Creating source archive: $ARCHIVE_DIR/$ARCHIVE_NAME"
-tar --exclude=target --exclude=node_modules -czf "$ARCHIVE_DIR/$ARCHIVE_NAME" .
+tar --exclude=target --exclude=node_modules --exclude="$ARCHIVE_DIR" -czf "$ARCHIVE_DIR/$ARCHIVE_NAME" .
 
 if [[ -z "$WEBDAV_PASSWORD" ]]; then
   echo "WEBDAV_PASSWORD is required" >&2
@@ -26,7 +26,7 @@ BASE_URL="https://${WEBDAV_SERVER}:${WEBDAV_PORT}"
 REMOTE="${PRIVATE_PATH}/${ARCHIVE_NAME}"
 
 echo "Uploading to private WebDAV: ${BASE_URL}${REMOTE}"
-curl -sS -T "$ARCHIVE_DIR/$ARCHIVE_NAME" -u "${WEBDAV_USERNAME}:${WEBDAV_PASSWORD}" \
+curl -sS --insecure -T "$ARCHIVE_DIR/$ARCHIVE_NAME" -u "${WEBDAV_USERNAME}:${WEBDAV_PASSWORD}" \
   "${BASE_URL}${REMOTE}"
 
 echo "Backup complete: ${BASE_URL}${REMOTE}"
