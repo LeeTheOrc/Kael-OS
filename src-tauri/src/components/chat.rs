@@ -895,8 +895,13 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                     if message.author == "Kael" {
                             div {
                                 class: "flex gap-3 mb-4 items-start",
-                                div { style: "width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #e040fb 0%, #ffcc00 100%); display: flex; align-items: center; justify-content: center; flex-shrink: 0;",
-                                    span { style: "font-weight: bold; color: #120e1a; font-size: 20px;", "K" }
+                                // Kael's dragon emoji avatar
+                                div { 
+                                    style: "width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #e040fb 0%, #8b5cf6 100%); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid #ffcc00; box-shadow: 0 4px 12px rgba(224, 64, 251, 0.3);",
+                                    span { 
+                                        style: "font-size: 28px;", 
+                                        "🐉"
+                                    }
                                 }
                                 div {
                                     // Kael bubble (AI or terminal output)

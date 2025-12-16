@@ -82,7 +82,25 @@ fn render_themes_tab() -> Element {
                         
                         spawn(async move {
                             match crate::commands::install_grub_theme().await {
-                                Ok(msg) => status.set(msg),
+                                Ok(msg) => {
+                                    // Extract sudo command and prepare for clipboard
+                                    let sudo_cmd = if let Some(start) = msg.find("sudo cp") {
+                                        if let Some(end) = msg[start..].find('\n') {
+                                            &msg[start..start + end]
+                                        } else {
+                                            &msg[start..]
+                                        }
+                                    } else {
+                                        ""
+                                    };
+                                    
+                                    let response = if !sudo_cmd.is_empty() {
+                                        format!("{}\n\n📋 Click 'Copy Command' below to copy the sudo command to clipboard.", msg)
+                                    } else {
+                                        msg
+                                    };
+                                    status.set(response);
+                                }
                                 Err(e) => status.set(format!("❌ {}", e)),
                             }
                         });
@@ -95,6 +113,32 @@ fn render_themes_tab() -> Element {
                         style: "background: rgba(58, 42, 80, 0.3); padding: 12px; border-radius: 6px; border-left: 3px solid #ffcc00; white-space: pre-wrap;",
                         p { style: "color: #f7f2ff; margin: 0; font-size: 13px; font-family: monospace;",
                             "{grub_status}"
+                        }
+                        
+                        // Copy command button if there's a sudo command
+                        if grub_status().contains("sudo cp") {
+                            button {
+                                style: "background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%); color: white; border: none; cursor: pointer; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 12px; margin-top: 8px;",
+                                onclick: move |_| {
+                                    let msg = grub_status().to_string();
+                                    let mut status_clone = grub_status.clone();
+                                    
+                                    spawn(async move {
+                                        if let Some(start) = msg.find("sudo cp") {
+                                            let end = msg[start..].find('\n').unwrap_or(msg[start..].len());
+                                            let sudo_cmd = msg[start..start + end].to_string();
+                                            
+                                            // Copy to clipboard using arboard
+                                            if let Ok(mut clipboard) = arboard::Clipboard::new() {
+                                                let _ = clipboard.set_text(sudo_cmd);
+                                            }
+                                            
+                                            status_clone.set(format!("{}\n\n✅ Command copied! Paste in terminal and enter your password.", msg));
+                                        }
+                                    });
+                                },
+                                "📋 Copy Command to Clipboard"
+                            }
                         }
                     }
                 }
