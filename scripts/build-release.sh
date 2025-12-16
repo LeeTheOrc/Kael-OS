@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION="1.0.0"
+VERSION="0.5.0"
 PACKAGE_NAME="kael-os-${VERSION}-x86_64"
 BASE_DIR="/home/leetheorc/Kael-os/Kael-OS-AI"
 # Binary is built at workspace root level
@@ -15,6 +15,8 @@ echo "📦 Creating release package: $PACKAGE_NAME"
 mkdir -p "dist/${PACKAGE_NAME}/bin"
 mkdir -p "dist/${PACKAGE_NAME}/share/applications"
 mkdir -p "dist/${PACKAGE_NAME}/share/icons/hicolor/512x512/apps"
+mkdir -p "dist/${PACKAGE_NAME}/share/kael-os/wallpapers"
+mkdir -p "dist/${PACKAGE_NAME}/share/kael-os/grub"
 
 # Copy binary
 echo "  ✓ Copying binary..."
@@ -24,6 +26,11 @@ chmod +x "dist/${PACKAGE_NAME}/bin/kael-os"
 # Copy icon
 echo "  ✓ Copying icon..."
 cp assets/generated/png/app-icons/icon-512.png "dist/${PACKAGE_NAME}/share/icons/hicolor/512x512/apps/kael-os.png"
+
+# Copy theme assets
+echo "  ✓ Copying theme assets..."
+cp assets/wallpapers/kael-dragon-wallpaper.jpg "dist/${PACKAGE_NAME}/share/kael-os/wallpapers/"
+cp assets/grub/kael-dragon-grub.jpg "dist/${PACKAGE_NAME}/share/kael-os/grub/"
 
 # Create desktop file
 echo "  ✓ Creating desktop entry..."
@@ -55,16 +62,21 @@ MANUAL INSTALL:
   sudo cp bin/kael-os /usr/bin/
   sudo cp share/applications/kael-os.desktop /usr/share/applications/
   sudo cp share/icons/hicolor/512x512/apps/kael-os.png /usr/share/icons/hicolor/512x512/apps/
+  sudo cp -r share/kael-os /usr/share/
 
 UNINSTALL:
   sudo rm /usr/bin/kael-os
   sudo rm /usr/share/applications/kael-os.desktop
   sudo rm /usr/share/icons/hicolor/512x512/apps/kael-os.png
+  sudo rm -rf /usr/share/kael-os
 
 REQUIREMENTS:
   - Arch Linux (or compatible)
   - Ollama (optional, for local AI)
   - GPU drivers (optional, for GPU status)
+
+THEMES:
+  Wallpaper and GRUB themes can be installed from Settings → Themes tab in the app.
 
 For more information: https://leroyonline.co.za/kael/
 EOF

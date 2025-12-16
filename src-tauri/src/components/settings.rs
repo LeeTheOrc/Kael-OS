@@ -5,6 +5,115 @@ use crate::components::login::LoginPanel;
 use crate::llm::{self, LLMProvider, LLMRequest};
 use dioxus::prelude::*;
 
+fn render_themes_tab() -> Element {
+    let mut wallpaper_status = use_signal(|| String::new());
+    let mut grub_status = use_signal(|| String::new());
+    
+    rsx! {
+        div {
+            h1 { style: "color: #ffcc00; letter-spacing: 0.02em; margin-bottom: 16px;", "🎨 Kael-OS Themes" }
+
+            p { style: "color: #a99ec3; margin-bottom: 24px;",
+                "Install the official Kael-OS dragon wallpaper and GRUB theme to your system."
+            }
+
+            // Wallpaper Installation
+            div {
+                style: "border: 1px solid #3a2a50; border-radius: 12px; padding: 20px; background: linear-gradient(160deg, #1c162b 0%, #120e1a 60%, #0f0b1f 100%); box-shadow: 0 12px 28px #00000055; margin-bottom: 16px;",
+
+                h2 { style: "color: #e040fb; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;",
+                    "🖼️ Desktop Wallpaper"
+                }
+
+                p { style: "color: #cbd5ff; font-size: 14px; margin-bottom: 16px;",
+                    "Install the cyberpunk dragon wallpaper (semi-sideways, 1536x1024) to your desktop environment. Supports KDE Plasma, GNOME, XFCE, and others."
+                }
+
+                button {
+                    style: "background: linear-gradient(135deg, #e040fb 0%, #8b5cf6 100%); color: white; border: none; cursor: pointer; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 12px;",
+                    onclick: move |_| {
+                        let mut status = wallpaper_status.clone();
+                        status.set("🔄 Installing wallpaper...".to_string());
+                        
+                        spawn(async move {
+                            match crate::commands::install_wallpaper().await {
+                                Ok(msg) => status.set(msg),
+                                Err(e) => status.set(format!("❌ {}", e)),
+                            }
+                        });
+                    },
+                    "📥 Install Wallpaper"
+                }
+
+                if !wallpaper_status().is_empty() {
+                    div {
+                        style: "background: rgba(58, 42, 80, 0.3); padding: 12px; border-radius: 6px; border-left: 3px solid #e040fb; white-space: pre-wrap;",
+                        p { style: "color: #f7f2ff; margin: 0; font-size: 13px; font-family: monospace;",
+                            "{wallpaper_status}"
+                        }
+                    }
+                }
+            }
+
+            // GRUB Theme Installation
+            div {
+                style: "border: 1px solid #3a2a50; border-radius: 12px; padding: 20px; background: linear-gradient(160deg, #1c162b 0%, #120e1a 60%, #0f0b1f 100%); box-shadow: 0 12px 28px #00000055;",
+
+                h2 { style: "color: #e040fb; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;",
+                    "⚡ GRUB Bootloader Theme"
+                }
+
+                p { style: "color: #cbd5ff; font-size: 14px; margin-bottom: 16px;",
+                    "Install the dragon theme for your GRUB bootloader. This prepares the image file and provides instructions for manual installation (requires sudo)."
+                }
+
+                div {
+                    style: "background: rgba(255, 204, 0, 0.1); padding: 12px; border-radius: 6px; border-left: 3px solid #ffcc00; margin-bottom: 16px;",
+                    p { style: "color: #ffcc00; margin: 0; font-size: 13px; display: flex; align-items: center; gap: 6px;",
+                        "⚠️ GRUB installation requires sudo/root access. Instructions will be provided."
+                    }
+                }
+
+                button {
+                    style: "background: linear-gradient(135deg, #ffcc00 0%, #ff8800 100%); color: #120e1a; border: none; cursor: pointer; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 12px;",
+                    onclick: move |_| {
+                        let mut status = grub_status.clone();
+                        status.set("🔄 Preparing GRUB theme...".to_string());
+                        
+                        spawn(async move {
+                            match crate::commands::install_grub_theme().await {
+                                Ok(msg) => status.set(msg),
+                                Err(e) => status.set(format!("❌ {}", e)),
+                            }
+                        });
+                    },
+                    "📥 Prepare GRUB Theme"
+                }
+
+                if !grub_status().is_empty() {
+                    div {
+                        style: "background: rgba(58, 42, 80, 0.3); padding: 12px; border-radius: 6px; border-left: 3px solid #ffcc00; white-space: pre-wrap;",
+                        p { style: "color: #f7f2ff; margin: 0; font-size: 13px; font-family: monospace;",
+                            "{grub_status}"
+                        }
+                    }
+                }
+            }
+
+            // Preview Section
+            div {
+                style: "margin-top: 24px; padding-top: 24px; border-top: 1px solid #3a2d56;",
+                h3 { style: "color: #a99ec3; margin-bottom: 12px; font-size: 14px;",
+                    "🎨 Theme Preview"
+                }
+                p { style: "color: #cbd5ff; font-size: 13px;",
+                    "The dragon themes feature the same cyberpunk aesthetic as Kael-OS: purple and blue gradients with circuit patterns and tech-enhanced design."
+                }
+            }
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
 struct ProviderUIState {
     name: String,
@@ -94,6 +203,7 @@ enum SettingsTab {
     Providers,
     System,
     Security,
+    Themes,
 }
 
 #[derive(Props, Clone, PartialEq)]
@@ -304,6 +414,16 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                         },
                         onclick: move |_| active_tab.set(SettingsTab::Security),
                         "🔒 Security"
+                    }
+                    button {
+                        class: "w-full text-left px-4 py-3 rounded-lg transition-all",
+                        style: if active_tab() == SettingsTab::Themes {
+                            "background: linear-gradient(135deg, #e040fb 0%, #ffcc00 100%); color: #120e1a; font-weight: 700; border: none; cursor: pointer;"
+                        } else {
+                            "background: rgba(58, 42, 80, 0.3); color: #a99ec3; border: 1px solid #3a2d56; cursor: pointer;"
+                        },
+                        onclick: move |_| active_tab.set(SettingsTab::Themes),
+                        "🎨 Themes"
                     }
                 }
 
@@ -1061,7 +1181,13 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                             }
                         }
                     }
-                }            }
+                }
+
+                // Themes Tab
+                if active_tab() == SettingsTab::Themes {
+                    {render_themes_tab()}
+                }
+            }
         }
     }
 }

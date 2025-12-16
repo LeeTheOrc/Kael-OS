@@ -1,6 +1,6 @@
 // src-tauri/src/components/terminal.rs
-use dioxus::prelude::*;
 use dioxus::events::Code;
+use dioxus::prelude::*;
 
 use crate::components::icons::{PanelIcon, SparkIcon};
 use crate::terminal::PtyTerminal;
@@ -39,28 +39,50 @@ fn format_terminal_line(line: &str) -> String {
     if line.is_empty() {
         return String::new();
     }
-    
+
     // HTML escape the line content
     let escaped = line
         .replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;");
-    
+
     // Detect message type and add color
-    if line.starts_with("✅") || line.contains("success") || line.contains("Success") || line.contains("SUCCESS") {
+    if line.starts_with("✅")
+        || line.contains("success")
+        || line.contains("Success")
+        || line.contains("SUCCESS")
+    {
         format!("<span style='color: #7aebbe;'>{}</span>", escaped)
-    } else if line.starts_with("❌") || line.contains("error") || line.contains("Error") || line.contains("ERROR") || line.contains("failed") || line.contains("Failed") {
+    } else if line.starts_with("❌")
+        || line.contains("error")
+        || line.contains("Error")
+        || line.contains("ERROR")
+        || line.contains("failed")
+        || line.contains("Failed")
+    {
         format!("<span style='color: #ff6b9d;'>{}</span>", escaped)
-    } else if line.starts_with("⚠️") || line.starts_with("💡") || line.contains("warning") || line.contains("Warning") || line.contains("WARN") {
+    } else if line.starts_with("⚠️")
+        || line.starts_with("💡")
+        || line.contains("warning")
+        || line.contains("Warning")
+        || line.contains("WARN")
+    {
         format!("<span style='color: #ffcc00;'>{}</span>", escaped)
-    } else if line.starts_with("📋") || line.starts_with("☁️") || line.starts_with("💾") || line.starts_with("🔍") {
+    } else if line.starts_with("📋")
+        || line.starts_with("☁️")
+        || line.starts_with("💾")
+        || line.starts_with("🔍")
+    {
         format!("<span style='color: #e040fb;'>{}</span>", escaped)
     } else if line.starts_with("$") || line.starts_with(">") {
         format!("<span style='color: #5af0c8;'>{}</span>", escaped)
     } else if line.starts_with("   ") || line.starts_with("  ") {
         // Indented continuation lines
-        format!("<span style='color: #a99ec3; padding-left: 1em;'>{}</span>", escaped)
+        format!(
+            "<span style='color: #a99ec3; padding-left: 1em;'>{}</span>",
+            escaped
+        )
     } else {
         format!("<span style='color: #f7f2ff;'>{}</span>", escaped)
     }
@@ -70,10 +92,10 @@ fn format_terminal_line(line: &str) -> String {
 pub fn TerminalPanel(props: TerminalProps) -> Element {
     let mut user_input = use_signal(String::new);
     let mut is_password_prompt = use_signal(|| false);
-    
+
     // Format output with colors
     let formatted_output = props.term_out.read();
-    
+
     // Detect password prompts in the last few lines
     {
         let last_lines: Vec<&str> = formatted_output.lines().rev().take(3).collect();
@@ -87,13 +109,13 @@ pub fn TerminalPanel(props: TerminalProps) -> Element {
         }
         is_password_prompt.set(is_pwd);
     }
-    
+
     let lines: Vec<String> = formatted_output
         .lines()
         .map(|line| format_terminal_line(line))
         .collect();
     let formatted_html = lines.join("<br/>");
-    
+
     rsx! {
         div {
             class: "flex flex-col gap-3",

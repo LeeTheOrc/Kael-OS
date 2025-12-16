@@ -1,90 +1,241 @@
-# Kael-OS
+# Kael-OS Website
 
-AI-native desktop forge built in Rust with Dioxus + Tauri. No Node/npm/pnpm required.
+Official website for Kael-OS - A high-performance local AI desktop application built with Rust and Tauri.
 
-## Features
+## 🌐 Live Site
 
-- **Rust + Dioxus Desktop**: Native UI with forge palette and Kael sigil
-- **Kael Personality**: System context + laws baked into Rust backend
-- **Terminal Bridge**: Local shell exec with Arch/paru translator text
-- **Offline-First**: SQLite local store; Firebase sync remains optional
-- **Modular Panels**: Header, chat, left/right sidebars, settings
-- **Pure Rust Build**: No Node toolchain needed
+**Production**: https://kael-os.dev (GitHub Pages)  
+**Repository**: https://github.com/leetheorc/Kael-OS-AI
 
-## 📚 Documentation
+## 📁 Structure
 
-**All documentation is organized by purpose:**
-
-- **[DOCS_INDEX.md](DOCS_INDEX.md)** - Master navigation to all guides
-- **[00_START_HERE.md](00_START_HERE.md)** - New user quick start
-- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Command cheat sheet
-- **User Guides** → [`docs/user/`](docs/user/)
-- **Developer Docs** → [`docs/dev/`](docs/dev/)
-- **Deployment** → [`docs/deploy/`](docs/deploy/)
-
-## Quick Start
-
-### Prerequisites
-
-- Rust (via rustup)
-- Platform libs for Tauri/WebKit (see SETUP.md)
-
-### Run (dev)
-
-```bash
-cd src-tauri
-cargo run
+```
+website/
+├── index.html          # Homepage with hero, features, screenshots
+├── docs.html          # Documentation hub (installation, quick start, API)
+├── download.html      # Download page (all platforms, install methods)
+├── about.html         # About page (mission, team, roadmap)
+├── style.css          # Unified styles for all pages
+├── script.js          # Interactive features and animations
+├── install.sh         # Auto-installer script for Arch Linux
+├── README.md          # This file
+├── downloads/         # Binary releases (managed by CI/CD)
+├── pkgbuild/          # PKGBUILD files for Arch Linux
+└── docs/              # Additional documentation files
 ```
 
-### Firebase OAuth Setup (Optional)
+## 🎨 Design
 
-For Google and GitHub sign-in support:
+- **Theme**: Dark purple gradient with blue accents
+- **Framework**: Vanilla HTML/CSS/JS (no dependencies)
+- **Responsive**: Mobile-first design with flexbox and grid
+- **Accessibility**: Semantic HTML, proper ARIA labels
+- **Performance**: Optimized assets, minimal JavaScript
 
-1. Copy `.env.example` to `.env.local`
-2. Add your Firebase project credentials
-3. See [FIREBASE.md](./FIREBASE.md) for integration notes
+## 🚀 Deployment
 
-Without Firebase configured, the app stays entirely local.
+### GitHub Pages (Recommended)
 
-### Build
+1. **Push to repository**:
+
+   ```bash
+   git add website/
+   git commit -m "Update website"
+   git push origin main
+   ```
+
+2. **Configure GitHub Pages**:
+
+   - Go to repository Settings → Pages
+   - Source: Deploy from `main` branch
+   - Folder: `/website`
+   - Custom domain (optional): `kael-os.dev`
+
+3. **DNS Configuration** (if using custom domain):
+   ```
+   A     @     185.199.108.153
+   A     @     185.199.109.153
+   A     @     185.199.110.153
+   A     @     185.199.111.153
+   CNAME www   leetheorc.github.io
+   ```
+
+### Local Development
 
 ```bash
-cd src-tauri
-cargo build --release
+# Navigate to website directory
+cd website/
+
+# Serve with Python
+python -m http.server 8000
+
+# Or with Node.js
+npx http-server -p 8000
+
+# Open browser
+xdg-open http://localhost:8000
 ```
 
-## Project Structure
+## 📝 Content Management
 
-- `src-tauri/`: Rust app (Dioxus Desktop + Tauri + SQLite)
-- `sql/`: Database migrations
+### Adding New Pages
 
-## Architecture
+1. Create new HTML file in `website/`
+2. Copy navigation and footer from existing pages
+3. Add page-specific content
+4. Link from navigation menu in all pages
+5. Update this README
 
-### UI (Dioxus)
+### Updating Downloads
 
-- Component-based UI in Rust (`src-tauri/src/components`)
-- Forge palette + Kael sigil baked into components
+Binary releases are automatically uploaded by GitHub Actions to:
 
-### Backend (Rust/Tauri)
+- `website/downloads/kael-os-arch.pkg.tar.zst`
+- `website/downloads/kael-os-linux.tar.gz`
+- `website/downloads/Kael-OS.AppImage`
 
-- IPC commands for UI
-- SQLite migrations
-- Modules: db, terminal, kael, firebase, api
-- Async/await with Tokio
+Manual upload:
 
-## Technologies
+```bash
+cp ../path/to/build/kael-os-arch.pkg.tar.zst downloads/
+git add downloads/
+git commit -m "Update Arch package"
+git push
+```
 
-- **UI**: Dioxus Desktop
-- **Core**: Tauri 2.x, Rust, SQLite, Tokio
+### Updating Documentation
 
-## Roadmap
+Edit `docs.html` directly or link to markdown docs in `/docs` directory.
 
-- **Chat/LLM**: Wire streaming + history (SQLite)
-- **Terminal**: Stream PTY output to UI; keep Arch translations
-- **Settings**: Provider toggles + theme slots
-- **Sync**: Optional Firebase; stays local by default
-- **Packaging**: Cross-platform bundles via `cargo build --release`
+## 🎯 Features
 
-## License
+### Homepage (index.html)
 
-MIT
+- Animated gradient hero section
+- Feature cards with hover effects
+- Screenshot gallery (placeholder images)
+- Community links (GitHub, Discord)
+- Newsletter subscription form
+- Download quick links
+- Enhanced footer
+
+### Documentation (docs.html)
+
+- Installation guides for all platforms
+- Quick start tutorial
+- Configuration examples
+- API reference links
+- Code examples with syntax highlighting
+
+### Download (download.html)
+
+- Platform-specific instructions (Arch, Linux, AppImage)
+- Build from source guide
+- System requirements
+- Quick install commands
+- Next steps after installation
+
+### About (about.html)
+
+- Project mission and vision
+- Philosophy cards (Privacy, Speed, Offline-first)
+- Technology stack
+- Arch Linux focus explanation
+- Development team info
+- Roadmap timeline
+- Community contribution guide
+
+## 🛠️ Technologies
+
+- **HTML5**: Semantic markup
+- **CSS3**: Modern features (Grid, Flexbox, Custom Properties)
+- **JavaScript**: Vanilla ES6+ (no frameworks)
+- **GitHub Pages**: Static hosting
+- **GitHub Actions**: Automated deployment
+
+## 🔧 Customization
+
+### Colors
+
+Edit CSS variables in `style.css`:
+
+```css
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --accent-purple: #8b5cf6;
+  --accent-blue: #3b82f6;
+  /* ... */
+}
+```
+
+### Navigation
+
+Update nav links in all HTML files:
+
+```html
+<ul class="nav-links">
+  <li><a href="index.html">Home</a></li>
+  <li><a href="docs.html">Docs</a></li>
+  <!-- ... -->
+</ul>
+```
+
+### Content
+
+All content is in HTML files - no build process needed. Edit directly and refresh browser.
+
+## 📊 Analytics (Optional)
+
+Add to `<head>` of each page for tracking:
+
+```html
+<!-- Google Analytics -->
+<script
+  async
+  src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
+></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() {
+    dataLayer.push(arguments);
+  }
+  gtag("js", new Date());
+  gtag("config", "G-XXXXXXXXXX");
+</script>
+```
+
+## 🐛 Known Issues
+
+- Screenshot placeholders need real images
+- Newsletter form needs backend integration (Mailchimp/SendGrid)
+- Discord invite link placeholder (update with real link)
+- Download links point to GitHub releases (verify paths)
+
+## 🤝 Contributing
+
+To contribute to the website:
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b website-improvements`
+3. Make your changes in `website/`
+4. Test locally with a development server
+5. Commit: `git commit -m "Improve website: [description]"`
+6. Push: `git push origin website-improvements`
+7. Create a Pull Request
+
+## 📄 License
+
+MIT License - see [LICENSE](../LICENSE) file
+
+## 🔗 Links
+
+- **Main Repository**: https://github.com/leetheorc/Kael-OS-AI
+- **Documentation**: https://kael-os.dev/docs.html
+- **Download**: https://kael-os.dev/download.html
+- **Discord**: https://discord.gg/kael-os (update with real link)
+
+---
+
+**Last Updated**: December 16, 2025  
+**Maintainer**: [@leetheorc](https://github.com/leetheorc)

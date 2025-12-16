@@ -1,5 +1,8 @@
 #![allow(dead_code)]
 
+pub mod theme_installer;
+pub use theme_installer::{install_wallpaper, install_grub_theme};
+
 use crate::state::{ChatMessage, KaelConfig};
 use crate::webdav::{WebDavClient, WebDavConfig};
 use crate::version::Version;
