@@ -1,0 +1,54 @@
+================================================================================
+KAEL-OS DRAGON-BIRD AVATAR ICON GENERATION PROMPT
+================================================================================
+
+USE THIS PROMPT WITH:
+- DALL-E 3 (ChatGPT Plus)
+- Midjourney
+- Stable Diffusion
+- Adobe Firefly
+
+================================================================================
+
+
+Create a mystical, futuristic avatar icon of a sleek bird-dragon hybrid creature.
+
+Style requirements:
+- Minimalist, modern, geometric design suitable for an app icon
+- Avatar/profile style composition (head/upper body focus)
+- Sharp, clean lines with a tech-aesthetic
+- Glowing elements suggesting AI/digital nature
+
+Colors (STRICTLY USE THESE):
+- Primary: Vibrant purple (#8b5cf6) 
+- Secondary: Electric blue (#3b82f6)
+- Accents: Dark purple/navy gradients
+- Subtle glow effects in purple and blue
+- Dark background (#0d1117 to #161b22)
+
+Creature design:
+- Dragon-like head with intelligent, piercing eyes
+- Sleek bird-like features (streamlined beak/snout, elegant neck)
+- Ethereal, mystical aura
+- Tech-enhanced elements (circuit patterns, energy glow)
+- Majestic, wise, powerful presence
+- Forward-facing, centered composition
+
+Art style:
+- Digital art, vector-like quality
+- Cyberpunk/sci-fi fantasy fusion
+- Icon-friendly (clear at small sizes)
+- Professional, polished finish
+- Gradient overlays for depth
+
+The icon should represent an AI assistant - intelligent, mystical, powerful, and futuristic.
+Perfect for a 512x512 or 1024x1024 app icon.
+
+
+================================================================================
+COLOR CODES:
+  accent_purple: #8b5cf6
+  accent_blue: #3b82f6
+  bg_primary: #0d1117
+  bg_secondary: #161b22
+================================================================================
