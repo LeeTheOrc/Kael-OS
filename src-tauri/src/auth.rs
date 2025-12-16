@@ -67,18 +67,104 @@ impl AuthService {
         }
     }
 
+    fn get_data_dir() -> std::path::PathBuf {
+        let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+        let data_dir = std::path::Path::new(&home).join(".local/share/kael-os");
+        // Ensure directory exists
+        let _ = std::fs::create_dir_all(&data_dir);
+        data_dir
+    }
+
+    fn get_user_file_path() -> std::path::PathBuf {
+        Self::get_data_dir().join("user.json")
+    }
+
     fn load_from_storage() -> Option<User> {
-        if let Ok(user_json) = std::fs::read_to_string("/tmp/kael_user.json") {
-            serde_json::from_str(&user_json).ok()
-        } else {
-            None
+        let user_path = Self::get_user_file_path();
+        if let Ok(user_json) = std::fs::read_to_string(&user_path) {
+            if let Ok(user) = serde_json::from_str::<User>(&user_json) {
+                // Check if token expired (just log, don't refresh here to avoid nested runtime)
+                if let Some(expires_in) = user.expires_in {
+                    let now = chrono::Utc::now().timestamp();
+                    if now >= expires_in - 300 {  // Check if expiring within 5 min
+                        log::warn!("⚠️  Token expired or expiring soon - user should re-login");
+                        // Don't refresh here - causes nested runtime panic
+                        // The app will handle token refresh via async use_effect
+                    }
+                }
+                return Some(user);
+            }
         }
+        None
     }
 
     fn save_to_storage(user: &User) {
-        if let Ok(json) = serde_json::to_string(user) {
-            let _ = std::fs::write("/tmp/kael_user.json", json);
+        let user_path = Self::get_user_file_path();
+        if let Ok(json) = serde_json::to_string_pretty(user) {
+            if let Err(e) = std::fs::write(&user_path, json) {
+                log::error!("Failed to save user to storage: {}", e);
+            } else {
+                log::info!("User saved to persistent storage: {:?}", user_path);
+            }
         }
+    }
+
+    pub async fn refresh_token_public(refresh_token: &str) -> Result<User, String> {
+        Self::refresh_id_token(refresh_token).await
+    }
+
+    async fn refresh_id_token(refresh_token: &str) -> Result<User, String> {
+        let api_key = std::env::var("VITE_FIREBASE_API_KEY")
+            .map_err(|_| "Missing VITE_FIREBASE_API_KEY".to_string())?;
+
+        let url = format!(
+            "https://securetoken.googleapis.com/v1/token?key={}",
+            api_key
+        );
+
+        let body = serde_json::json!({
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token
+        });
+
+        let client = reqwest::Client::new();
+        let resp = client.post(&url).json(&body).send().await
+            .map_err(|e| format!("Token refresh failed: {}", e))?;
+
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            log::error!("Token refresh error {}: {}", status, text);
+            return Err(format!("Token refresh failed: {}", text));
+        }
+
+        #[derive(Deserialize)]
+        struct RefreshResponse {
+            id_token: String,
+            refresh_token: String,
+            expires_in: String,
+            user_id: String,
+        }
+
+        let data: RefreshResponse = resp.json().await
+            .map_err(|e| format!("Failed to parse refresh response: {}", e))?;
+
+        let expires_in = data.expires_in.parse::<i64>().ok()
+            .map(|sec| chrono::Utc::now().timestamp() + sec);
+
+        log::info!("Token refreshed successfully for user {}", data.user_id);
+
+        // Need to fetch user details as refresh doesn't return them
+        // For now, return minimal user data and let the app handle fetching details
+        Ok(User {
+            uid: data.user_id,
+            email: String::new(), // Will be updated from existing user
+            name: String::new(),
+            photo_url: None,
+            id_token: data.id_token,
+            refresh_token: Some(data.refresh_token),
+            expires_in,
+        })
     }
 
     pub fn set_user(&self, user: User) {
@@ -98,7 +184,12 @@ impl AuthService {
 
     pub fn logout(&self) {
         if let Ok(mut u) = self.current_user.lock() {
-            let _ = std::fs::remove_file("/tmp/kael_user.json");
+            let user_path = Self::get_user_file_path();
+            if let Err(e) = std::fs::remove_file(&user_path) {
+                log::warn!("Failed to remove user file during logout: {}", e);
+            } else {
+                log::info!("User logged out and session cleared");
+            }
             *u = None;
         }
     }

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kael-OS Asset Preview Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #120e1a 0%, #1a1520 100%);
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #e040fb;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            background: linear-gradient(90deg, #e040fb, #7aebbe, #ffcc00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: #7aebbe;
+            font-size: 1.2rem;
+        }
+        
+        .color-palette {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .color-swatch {
+            text-align: center;
+        }
+        
+        .color-box {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.2);
+            margin-bottom: 0.5rem;
+        }
+        
+        .color-name {
+            font-size: 0.9rem;
+            color: #bbb;
+        }
+        
+        .color-code {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #7aebbe;
+        }
+        
+        .section {
+            margin: 3rem 0;
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            color: #e040fb;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 2rem;
+            background: linear-gradient(180deg, #e040fb, #7aebbe);
+            border-radius: 2px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+        
+        .asset-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .asset-card:hover {
+            border-color: #e040fb;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(224, 64, 251, 0.3);
+        }
+        
+        .asset-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #e040fb, transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .asset-card:hover::before {
+            left: 100%;
+        }
+        
+        .icon-preview {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(18, 14, 26, 0.6);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        
+        .icon-preview img,
+        .icon-preview object {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .asset-name {
+            font-weight: bold;
+            color: #7aebbe;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .asset-description {
+            font-size: 0.85rem;
+            color: #aaa;
+            line-height: 1.4;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        
+        .badge-svg {
+            background: linear-gradient(90deg, #e040fb, #7aebbe);
+            color: #120e1a;
+        }
+        
+        .badge-png {
+            background: rgba(255, 204, 0, 0.2);
+            color: #ffcc00;
+            border: 1px solid #ffcc00;
+        }
+        
+        .logo-showcase {
+            text-align: center;
+            padding: 3rem;
+            background: rgba(18, 14, 26, 0.8);
+            border-radius: 16px;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(224, 64, 251, 0.3);
+        }
+        
+        .logo-showcase img {
+            max-width: 400px;
+            margin: 2rem auto;
+        }
+        
+        .placeholder-card {
+            opacity: 0.6;
+            border-style: dashed;
+        }
+        
+        .placeholder-icon {
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 2rem;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: #666;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #e040fb, #7aebbe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-label {
+            color: #aaa;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Kael-OS Asset Gallery</h1>
+            <p class="subtitle">AI-Powered Desktop Application Design System</p>
+            
+            <div class="color-palette">
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #e040fb;"></div>
+                    <div class="color-name">Primary Purple</div>
+                    <div class="color-code">#e040fb</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #7aebbe;"></div>
+                    <div class="color-name">Cyan Accent</div>
+                    <div class="color-code">#7aebbe</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #ffcc00;"></div>
+                    <div class="color-name">Yellow Highlight</div>
+                    <div class="color-code">#ffcc00</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #120e1a;"></div>
+                    <div class="color-name">Dark Background</div>
+                    <div class="color-code">#120e1a</div>
+                </div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">10</div>
+                    <div class="stat-label">SVG Icons</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">15</div>
+                    <div class="stat-label">PNG Assets</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">25</div>
+                    <div class="stat-label">Total Assets</div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="logo-showcase">
+            <h2 style="color: #7aebbe; margin-bottom: 1rem;">Primary Logo</h2>
+            <img src="logo.svg" alt="Kael-OS Logo">
+            <p style="color: #aaa; margin-top: 1rem;">Animated wordmark with pulsing AI indicator</p>
+        </div>
+        
+        <section class="section">
+            <h2 class="section-title">UI Elements (SVG)</h2>
+            <div class="grid">
+                <div class="asset-card">
+                    <div class="icon-preview">
+                        <object data="loading-spinner.svg" type="image/svg+xml"></object>
+                    </div>
+                    <div class="asset-name">Loading Spinner</div>
+                    <div class="asset-description">Animated gradient spinner with pulsing center</div>
+                    <span class="badge badge-svg">SVG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview">
+                        <object data="success-icon.svg" type="image/svg+xml"></object>
+                    </div>
+                    <div class="asset-name">Success Icon</div>
+                    <div class="asset-description">Checkmark with glowing effect</div>
+                    <span class="badge badge-svg">SVG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview">
+                        <object data="error-icon.svg" type="image/svg+xml"></object>
+                    </div>
+                    <div class="asset-name">Error Icon</div>
+                    <div class="asset-description">Alert triangle with exclamation</div>
+                    <span class="badge badge-svg">SVG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview">
+                        <object data="info-icon.svg" type="image/svg+xml"></object>
+                    </div>
+                    <div class="asset-name">Info Icon</div>
+                    <div class="asset-description">Information circle symbol</div>
+                    <span class="badge badge-svg">SVG</span>
+                </div>
+            </div>
+        </section>
+        
+        <section class="section">
+            <h2 class="section-title">Feature Icons (SVG)</h2>
+            <div class="grid">
+                <div class="asset-card">
+                    <div class="icon-preview">
+                        <object data="chat-icon.svg" type="image/svg+xml"></object>
+                    </div>
+                    <div class="asset-name">Chat</div>
+                    <div class="asset-description">Speech bubble for chat interface</div>
+                    <span class="badge badge-svg">SVG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview">
+                        <object data="terminal-icon.svg" type="image/svg+xml"></object>
+                    </div>
+                    <div class="asset-name">Terminal</div>
+                    <div class="asset-description">Command prompt window</div>
+                    <span class="badge badge-svg">SVG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview">
+                        <object data="settings-icon.svg" type="image/svg+xml"></object>
+                    </div>
+                    <div class="asset-name">Settings</div>
+                    <div class="asset-description">Configuration gear icon</div>
+                    <span class="badge badge-svg">SVG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview">
+                        <object data="ollama-icon.svg" type="image/svg+xml"></object>
+                    </div>
+                    <div class="asset-name">Ollama AI</div>
+                    <div class="asset-description">Neural network brain for local AI</div>
+                    <span class="badge badge-svg">SVG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview">
+                        <object data="cloud-icon.svg" type="image/svg+xml"></object>
+                    </div>
+                    <div class="asset-name">Cloud AI</div>
+                    <div class="asset-description">Cloud with animated sparkles</div>
+                    <span class="badge badge-svg">SVG</span>
+                </div>
+            </div>
+        </section>
+        
+        <section class="section">
+            <h2 class="section-title">✅ App Icons (PNG)</h2>
+            <div class="grid">
+                <div class="asset-card">
+                    <div class="icon-preview" style="background: white; padding: 10px;">
+                        <img src="png/app-icons/icon-16.png" alt="16px icon" style="width: 32px; height: 32px; image-rendering: pixelated;">
+                    </div>
+                    <div class="asset-name">icon-16.png</div>
+                    <div class="asset-description">16x16px app icon</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview" style="background: white; padding: 10px;">
+                        <img src="png/app-icons/icon-32.png" alt="32px icon" style="width: 48px; height: 48px;">
+                    </div>
+                    <div class="asset-name">icon-32.png</div>
+                    <div class="asset-description">32x32px app icon</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview" style="background: white; padding: 10px;">
+                        <img src="png/app-icons/icon-48.png" alt="48px icon" style="width: 64px; height: 64px;">
+                    </div>
+                    <div class="asset-name">icon-48.png</div>
+                    <div class="asset-description">48x48px app icon</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview" style="background: white; padding: 10px;">
+                        <img src="png/app-icons/icon-64.png" alt="64px icon" style="width: 80px; height: 80px;">
+                    </div>
+                    <div class="asset-name">icon-64.png</div>
+                    <div class="asset-description">64x64px app icon</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview" style="background: white; padding: 10px;">
+                        <img src="png/app-icons/icon-128.png" alt="128px icon" style="width: 100px; height: 100px;">
+                    </div>
+                    <div class="asset-name">icon-128.png</div>
+                    <div class="asset-description">128x128px app icon</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview" style="background: white; padding: 10px;">
+                        <img src="png/app-icons/icon-256.png" alt="256px icon" style="width: 120px; height: 120px;">
+                    </div>
+                    <div class="asset-name">icon-256.png</div>
+                    <div class="asset-description">256x256px app icon</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview" style="background: white; padding: 10px;">
+                        <img src="png/app-icons/icon-512.png" alt="512px icon" style="width: 140px; height: 140px;">
+                    </div>
+                    <div class="asset-name">icon-512.png</div>
+                    <div class="asset-description">512x512px app icon</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+            </div>
+        </section>
+        
+        <section class="section">
+            <h2 class="section-title">✅ Background Images (PNG)</h2>
+            <div class="grid">
+                <div class="asset-card" style="grid-column: span 2;">
+                    <div class="icon-preview" style="height: 200px; overflow: hidden;">
+                        <img src="png/backgrounds/hero-background.png" alt="Hero Background" style="width: 100%; height: auto;">
+                    </div>
+                    <div class="asset-name">hero-background.png</div>
+                    <div class="asset-description">1920x1080 main background with circuit pattern</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview" style="height: 200px; overflow: hidden;">
+                        <img src="png/backgrounds/sidebar-background.png" alt="Sidebar Background" style="width: 100%; height: auto;">
+                    </div>
+                    <div class="asset-name">sidebar-background.png</div>
+                    <div class="asset-description">400x1080 sidebar panel background</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview" style="height: 200px; overflow: hidden;">
+                        <img src="png/backgrounds/terminal-background.png" alt="Terminal Background" style="width: 100%; height: auto;">
+                    </div>
+                    <div class="asset-name">terminal-background.png</div>
+                    <div class="asset-description">1920x1080 terminal panel background</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview" style="height: 200px; overflow: hidden;">
+                        <img src="png/backgrounds/chat-background.png" alt="Chat Background" style="width: 100%; height: auto;">
+                    </div>
+                    <div class="asset-name">chat-background.png</div>
+                    <div class="asset-description">1920x1080 chat area background</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+            </div>
+        </section>
+        
+        <section class="section">
+            <h2 class="section-title">✅ UI Elements (PNG)</h2>
+            <div class="grid">
+                <div class="asset-card">
+                    <div class="icon-preview" style="background: #2a2a2a; padding: 20px;">
+                        <img src="png/ui-elements/avatar-placeholder.png" alt="Avatar" style="width: 100px; height: 100px;">
+                    </div>
+                    <div class="asset-name">avatar-placeholder.png</div>
+                    <div class="asset-description">100x100 user avatar placeholder</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview" style="background: #2a2a2a; padding: 20px;">
+                        <img src="png/ui-elements/notification-badge.png" alt="Notification" style="width: 32px; height: 32px;">
+                    </div>
+                    <div class="asset-name">notification-badge.png</div>
+                    <div class="asset-description">32x32 notification indicator</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview" style="background: #2a2a2a; padding: 20px;">
+                        <img src="png/ui-elements/status-online.png" alt="Online" style="width: 32px; height: 32px; image-rendering: pixelated;">
+                    </div>
+                    <div class="asset-name">status-online.png</div>
+                    <div class="asset-description">16x16 online status indicator</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="icon-preview" style="background: #2a2a2a; padding: 20px;">
+                        <img src="png/ui-elements/status-offline.png" alt="Offline" style="width: 32px; height: 32px; image-rendering: pixelated;">
+                    </div>
+                    <div class="asset-name">status-offline.png</div>
+                    <div class="asset-description">16x16 offline status indicator</div>
+                    <span class="badge badge-png">PNG</span>
+                </div>
+            </div>
+        </section>
+        
+        <footer>
+            <p>🎨 Kael-OS Asset Gallery | Created December 16, 2025</p>
+            <p style="margin-top: 1rem; color: #7aebbe;">See README.md for usage guidelines and creation instructions</p>
+        </footer>
+    </div>
+</body>
+</html>

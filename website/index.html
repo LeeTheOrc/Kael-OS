@@ -1,56 +1,221 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Kael‑OS Project</title>
-    <style>
-      :root { --bg:#0b0f14; --fg:#e6edf3; --acc:#7dd3fc; --mut:#9aa4ad; }
-      body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; background:var(--bg); color:var(--fg); }
-      header { padding:40px 20px; text-align:center; border-bottom:1px solid #1e293b; }
-      h1 { margin:0 0 8px; font-size:2rem; }
-      p.lead { margin:0; color:var(--mut); }
-      nav { display:flex; gap:16px; justify-content:center; padding:12px 20px; }
-      nav a { color:var(--acc); text-decoration:none; }
-      main { max-width:960px; margin:24px auto; padding:0 20px; }
-      .cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px; }
-      .card { border:1px solid #1e293b; border-radius:10px; padding:16px; background:#0e141b; }
-      .card h3 { margin:0 0 10px; }
-      footer { text-align:center; padding:24px; color:var(--mut); border-top:1px solid #1e293b; }
-      a.btn { display:inline-block; padding:10px 14px; border-radius:8px; background:#0c4a6e; color:#cdeefa; text-decoration:none; }
-    </style>
-  </head>
-  <body>
-    <header>
-      <h1>Kael‑OS Project</h1>
-      <p class="lead">Downloads, docs, and updates for Kael‑OS.</p>
-      <nav>
-        <a href="/kael/downloads/">Downloads</a>
-        <a href="/kael/docs/">Docs</a>
-        <a href="/kael/arch/">Arch Install</a>
-      </nav>
-    </header>
-    <main>
-      <section class="cards">
-        <div class="card">
-          <h3>Latest Desktop Build</h3>
-          <p>Grab the latest desktop binary or installer.</p>
-          <a class="btn" href="/kael/downloads/">Go to Downloads</a>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kael-OS - Local AI Desktop Application</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">Kael-OS</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="download.html">Download</a></li>
+                <li><a href="docs.html">Docs</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="https://github.com/leetheorc/Kael-OS-AI" target="_blank">GitHub</a></li>
+            </ul>
         </div>
-        <div class="card">
-          <h3>Android APK</h3>
-          <p>Mobile build for Android (coming soon).</p>
-          <a class="btn" href="/kael/downloads/apk/">APK Area</a>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-gradient"></div>
+        <div class="container">
+            <h1>Local AI, <span class="highlight">Unlimited Power</span></h1>
+            <p class="hero-subtitle">A high-performance desktop application built with Rust and Tauri, bringing AI capabilities directly to your machine.</p>
+            <div class="hero-buttons">
+                <a href="download.html" class="btn btn-primary">Download Now</a>
+                <a href="https://github.com/leetheorc/Kael-OS-AI" class="btn btn-secondary" target="_blank">View on GitHub</a>
+            </div>
         </div>
-        <div class="card">
-          <h3>Documentation</h3>
-          <p>Guides and references for using Kael‑OS.</p>
-          <a class="btn" href="/kael/docs/">Read Docs</a>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Built for Performance</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Rust + Tauri</h3>
+                    <p>Lightning-fast desktop application built with modern Rust and Tauri framework for maximum performance and minimal resource usage.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Local AI (Ollama)</h3>
+                    <p>Run AI models locally with Ollama integration. Your data stays on your machine, completely private and secure.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Smart Fallback</h3>
+                    <p>Intelligent fallback system ensures seamless operation even when primary services are unavailable.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📴</div>
+                    <h3>Offline-First</h3>
+                    <p>Designed to work completely offline. No internet connection required for core functionality.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎮</div>
+                    <h3>GPU Support</h3>
+                    <p>Leverage your GPU for accelerated AI inference and improved performance on compatible hardware.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Privacy First</h3>
+                    <p>All processing happens locally on your device. Your conversations and data never leave your machine.</p>
+                </div>
+            </div>
         </div>
-      </section>
-    </main>
-    <footer>
-      © 2025 Kael‑OS. All rights reserved.
+    </section>
+class="screenshots">
+        <div class="container">
+            <h2>See It In Action</h2>
+            <p class="section-subtitle">Experience the power of local AI on your desktop</p>
+            <div class="screenshots-grid">
+                <div class="screenshot-card">
+                    <div class="screenshot-placeholder">
+                        <span class="placeholder-icon">💬</span>
+                        <p>AI Chat Interface</p>
+                    </div>
+                    <div class="screenshot-caption">
+                        <h3>Intelligent Conversations</h3>
+                        <p>Chat with AI models locally - your data stays private</p>
+                    </div>
+                </div>
+                <div class="screenshot-card">
+                    <div class="screenshot-placeholder">
+                        <span class="placeholder-icon">⚙️</span>
+                        <p>Settings Dashboard</p>
+                    </div>
+                    <div class="screenshot-caption">
+                        <h3>Full Control</h3>
+                        <p>Configure models, providers, and system preferences</p>
+                    </div>
+                </div>
+                <div class="screenshot-card">
+                    <div class="screenshot-placeholder">
+                        <span class="placeholder-icon">📊</span>
+                        <p>Performance Monitoring</p>
+                    </div>
+                    <div class="screenshot-caption">
+                        <h3>Resource Tracking</h3>
+                        <p>Monitor GPU usage, memory, and inference speed</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="community">
+        <div class="container">
+            <h2>Join the Community</h2>
+            <p class="section-subtitle">Connect with other Kael-OS users and contributors</p>
+            <div class="community-grid">
+                <a href="https://github.com/leetheorc/Kael-OS-AI" class="community-card" target="_blank">
+                    <div class="community-icon">💻</div>
+                    <h3>GitHub</h3>
+                    <p>Contribute code, report issues, and track development</p>
+                </a>
+                <a href="https://discord.gg/kael-os" class="community-card" target="_blank">
+                    <div class="community-icon">💬</div>
+                    <h3>Discord</h3>
+                    <p>Chat with users, get support, and share your experience</p>
+                </a>
+                <a href="https://github.com/leetheorc/Kael-OS-AI/discussions" class="community-card" target="_blank">
+                    <div class="community-icon">💡</div>
+                    <h3>Discussions</h3>
+                    <p>Share ideas, ask questions, and help others</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="newsletter">
+        <div class="container">
+            <div class="newsletter-content">
+                <h2>Stay Updated</h2>
+                <p>Get notified about new releases, features, and important updates</p>
+                <form class="newsletter-form" id="newsletter-form">
+                    <input type="email" placeholder="Enter your email" class="newsletter-input" required>
+                    <button type="submit" class="btn btn-primary">Subscribe</button>
+                </form>
+                <p class="newsletter-note">We respect your privacy. No spam, unsubscribe anytime.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="download" class="download">
+        <div class="container">
+            <h2>Get Started</h2>
+            <p class="download-subtitle">Choose your platform and start using Kael-OS today</p>
+            <div class="download-buttons">
+                <a href="downloads/kael-os-arch.pkg.tar.zst" class="btn btn-download">
+                    <span class="btn-icon">📦</span>
+                    <span class="btn-text">
+                        <strong>Arch Linux</strong>
+                        <small>AUR Package</small>
+                    </span>
+                </a>
+                <a href="downloads/kael-os-linux.tar.gz" class="btn btn-download">
+                    <span class="btn-icon">🐧</span>
+                    <span class="btn-text">
+                        <strong>Linux</strong>
+                        <small>tar.gz</small>
+                    </span>
+                </a>
+                <a href="https://github.com/leetheorc/Kael-OS-AI/releases" class="btn btn-download" target="_blank">
+                    <span class="btn-icon">🌐</span>
+                    <span class="btn-text">
+                        <strong>All Platforms</strong>
+                        <small>GitHub Releases</small>
+                    </span>
+                </a>
+            </div>
+            <p class="quick-install">Quick install for Arch Linux: <code>curl -sSL https://kael-os.dev/install.sh | bash</code></p>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Kael-OS</h4>
+                    <p>Local-first AI for Arch Linux</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="docs.html">Documentation</a></li>
+                        <li><a href="download.html">Download</a></li>
+                        <li><a href="about.html">About</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="https://github.com/leetheorc/Kael-OS-AI" target="_blank">GitHub</a></li>
+                        <li><a href="https://discord.gg/kael-os" target="_blank">Discord</a></li>
+                        <li><a href="https://github.com/leetheorc/Kael-OS-AI/discussions" target="_blank">Discussions</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="https://github.com/leetheorc/Kael-OS-AI/blob/main/LICENSE" target="_blank">MIT License</a></li>
+                        <li><a href="#privacy">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Kael-OS. Open source under MIT License.</p>
+            </div <a href="docs/">Documentation</a>
+            </p>
+        </div>
     </footer>
-  </body>
+
+    <script src="script.js"></script>
+</body>
 </html>

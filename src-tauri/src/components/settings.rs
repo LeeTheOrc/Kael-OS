@@ -23,9 +23,10 @@ fn provider_by_name(name: &str) -> Option<LLMProvider> {
         "Mistral AI" => Some(LLMProvider::Mistral),
         "Google Gemini" => Some(LLMProvider::Gemini),
         "GitHub Copilot" => Some(LLMProvider::Copilot),
-        "GitHub Copilot CLI" => Some(LLMProvider::CopilotCLI),
+        "GitHub Copilot CLI (New)" => Some(LLMProvider::CopilotAgent),
         "Office 365 AI" => Some(LLMProvider::Office365AI),
         "Google One AI" => Some(LLMProvider::GoogleOneAI),
+        "Minstrel AI" => Some(LLMProvider::Minstrel),
         _ => None,
     }
 }
@@ -33,7 +34,7 @@ fn provider_by_name(name: &str) -> Option<LLMProvider> {
 fn provider_requires_key(name: &str) -> bool {
     matches!(
         name,
-        "Mistral AI" | "Google Gemini" | "GitHub Copilot" | "Office 365 AI" | "Google One AI"
+        "Mistral AI" | "Google Gemini" | "GitHub Copilot" | "Office 365 AI" | "Google One AI" | "Minstrel AI"
     )
 }
 
@@ -130,6 +131,11 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                 api_key: String::new(),
             },
             ProviderUIState {
+                name: "GitHub Copilot CLI (New)".to_string(),
+                enabled: true,
+                api_key: String::new(),
+            },
+            ProviderUIState {
                 name: "GitHub Copilot CLI".to_string(),
                 enabled: true,
                 api_key: String::new(),
@@ -141,6 +147,11 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
             },
             ProviderUIState {
                 name: "Google One AI".to_string(),
+                enabled: false,
+                api_key: String::new(),
+            },
+            ProviderUIState {
+                name: "Minstrel AI".to_string(),
                 enabled: false,
                 api_key: String::new(),
             },
@@ -160,22 +171,38 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
     ];
 
     let auth_signal = props.auth_service.clone();
+    let mut gpg_status = use_signal(|| String::new());
 
     // Load provider keys from Firestore on mount (decrypts per user id_token)
     use_effect(move || {
         let auth = auth_signal();
         if let Some(user) = auth.get_user() {
+            log::info!("🔐 User authenticated, loading API keys from Firebase...");
             let mut set_providers = providers.clone();
             spawn(async move {
-                if let Ok(keys) = crate::firebase::get_api_keys(&user).await {
-                    let mut current = set_providers.write();
-                    for p in current.iter_mut() {
-                        if let Some(k) = keys.iter().find(|k| k.name == p.name) {
-                            p.api_key = k.value.clone();
+                match crate::firebase::get_api_keys(&user).await {
+                    Ok(keys) => {
+                        log::info!("✅ Loaded {} API keys from Firebase", keys.len());
+                        let mut current = set_providers.write();
+                        for p in current.iter_mut() {
+                            if let Some(k) = keys.iter().find(|k| k.name == p.name) {
+                                log::info!("  ✓ Setting key for: {} ({} chars)", p.name, k.value.len());
+                                p.api_key = k.value.clone();
+                                // Cache in llm module for runtime use
+                                if !k.value.is_empty() {
+                                    crate::llm::cache_api_key(&p.name, &k.value);
+                                }
+                            }
                         }
+                        log::info!("🎯 Provider keys loaded and UI should update");
+                    }
+                    Err(e) => {
+                        log::error!("❌ Failed to load API keys from Firebase: {}", e);
                     }
                 }
             });
+        } else {
+            log::info!("⚠️  No user authenticated, skipping API key load");
         }
     });
 
@@ -325,7 +352,47 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                         div {
                             style: "border: 1px solid #3a2a50; border-radius: 12px; padding: 16px; background: linear-gradient(160deg, #1c162b 0%, #120e1a 60%, #0f0b1f 100%); box-shadow: 0 12px 28px #00000055;",
 
-                            h2 { style: "color: #e040fb; margin-bottom: 16px;", "Available Providers" }
+                            div { style: "display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;",
+                                h2 { style: "color: #e040fb; margin: 0;", "Available Providers" }
+                                
+                                // Refresh keys from Firebase button
+                                if props.auth_service.read().is_authenticated() {
+                                    button {
+                                        style: "padding: 6px 12px; border-radius: 6px; background: linear-gradient(135deg, #e040fb 0%, #7aebbe 100%); color: #0f0b1a; font-weight: 600; font-size: 12px; border: none; cursor: pointer;",
+                                        onclick: move |_| {
+                                            let auth = props.auth_service.read();
+                                            if let Some(user) = auth.get_user() {
+                                                let mut set_providers = providers.clone();
+                                                spawn(async move {
+                                                    log::info!("🔄 Manually refreshing API keys from Firebase...");
+                                                    match crate::firebase::get_api_keys(&user).await {
+                                                        Ok(keys) => {
+                                                            log::info!("✅ Loaded {} API keys from Firebase", keys.len());
+                                                            let mut current = set_providers.write();
+                                                            for p in current.iter_mut() {
+                                                                if let Some(k) = keys.iter().find(|k| k.name == p.name) {
+                                                                    log::info!("  ✓ Found key for: {} ({} chars)", p.name, k.value.len());
+                                                                    p.api_key = k.value.clone();
+                                                                    // Cache in llm module for runtime use
+                                                                    if !k.value.is_empty() {
+                                                                        crate::llm::cache_api_key(&p.name, &k.value);
+                                                                    }
+                                                                } else {
+                                                                    log::info!("  ✗ No key found for: {}", p.name);
+                                                                }
+                                                            }
+                                                        }
+                                                        Err(e) => {
+                                                            log::error!("❌ Failed to load keys from Firebase: {}", e);
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        "🔄 Refresh Keys"
+                                    }
+                                }
+                            }
 
                             // Hybrid Assist toggle
                             div { style: "display: flex; align-items: center; gap: 10px; margin-bottom: 12px;",
@@ -396,8 +463,14 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                                         div {
                                             style: "color: #f7f2ff; font-weight: 600; display: flex; align-items: center; gap: 8px;",
                                             "{provider.name}"
+                                            // Show if API key is loaded
+                                            if !provider.api_key.is_empty() {
+                                                span { style: "color: #7aebbe; font-size: 11px; background: rgba(122, 235, 190, 0.2); padding: 2px 6px; border-radius: 4px;", "✓ Key Loaded" }
+                                            } else if provider.name != "Ollama (Local)" && provider.name != "GitHub Copilot CLI" && provider.name != "GitHub Copilot CLI (New)" {
+                                                span { style: "color: #ffcc00; font-size: 11px; background: rgba(255, 204, 0, 0.2); padding: 2px 6px; border-radius: 4px;", "⚠ No Key" }
+                                            }
                                             if let Some(count) = usage_counts().get(&provider.name) {
-                                                span { class: "chip", style: "color: #ffcc00;", "Last used: {count}" }
+                                                span { class: "chip", style: "color: #e040fb; font-size: 11px;", "Used: {count}" }
                                             }
                                         }
                                         input {
@@ -441,7 +514,7 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                                         }
                                     }
 
-                                    if provider.name != "Ollama (Local)" && provider.name != "GitHub Copilot CLI" {
+                                    if provider.name != "Ollama (Local)" && provider.name != "GitHub Copilot CLI" && provider.name != "GitHub Copilot CLI (New)" {
                                         div {
                                             style: "margin-top: 8px;",
                                             input {
@@ -472,6 +545,22 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                                             if provider.name == "GitHub Copilot" {
                                                 p { style: "margin: 6px 0 0 0; color: #a99ec3; font-size: 12px;",
                                                     "Get key: https://github.com/settings/personal-access-tokens → Fine-grained token with GitHub Models access, or sign into Copilot if available."
+                                                }
+                                            }
+                                            if provider.name == "GitHub Copilot CLI (New)" {
+                                                p { style: "margin: 6px 0 0 0; color: #a99ec3; font-size: 12px;",
+                                                    "No key needed. Requires the standalone Copilot CLI (npm install -g @github/copilot) and GitHub auth (gh auth login)."
+                                                }
+                                                button {
+                                                    style: "margin-top: 8px; padding: 6px 12px; border-radius: 6px; border: 1px solid #7aebbe; background: linear-gradient(135deg, #1f1631 0%, #181024 100%); color: #7aebbe; font-size: 12px; cursor: pointer;",
+                                                    onclick: move |_| {
+                                                        spawn(async move {
+                                                            use std::process::Command;
+                                                            let _ = Command::new("npm").args(&["install", "-g", "@github/copilot"]).status();
+                                                            let _ = Command::new("gh").args(&["auth", "status"]).status();
+                                                        });
+                                                    },
+                                                    "🚀 Install new Copilot CLI"
                                                 }
                                             }
                                             if provider.name == "GitHub Copilot CLI" {
@@ -532,7 +621,17 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                                                 for p in snapshot.iter() {
                                                     // Persist only if key is non-empty
                                                     if !p.api_key.is_empty() {
-                                                        let _ = crate::firebase::save_api_key(&user, &p.name, &p.api_key).await;
+                                                        log::info!("💾 Saving API key for: {}", p.name);
+                                                        match crate::firebase::save_api_key(&user, &p.name, &p.api_key).await {
+                                                            Ok(_) => {
+                                                                // Cache the key in memory for runtime use
+                                                                crate::llm::cache_api_key(&p.name, &p.api_key);
+                                                                log::info!("✅ Saved and cached key for: {}", p.name);
+                                                            }
+                                                            Err(e) => {
+                                                                log::error!("❌ Failed to save key for {}: {}", p.name, e);
+                                                            }
+                                                        }
                                                     }
                                                 }
 
@@ -765,55 +864,146 @@ pub fn SettingsPanel(mut props: SettingsPanelProps) -> Element {
                         div {
                             style: "border: 1px solid #3a2a50; border-radius: 12px; padding: 16px; background: linear-gradient(160deg, #1c162b 0%, #120e1a 60%, #0f0b1f 100%); box-shadow: 0 12px 28px #00000055; margin-bottom: 16px;",
 
-                            h2 { style: "color: #e040fb; margin-bottom: 12px;", "🔑 GPG Keys for Package Signing" }
+                            h2 { style: "color: #e040fb; margin-bottom: 12px;", "🔑 GPG Key Backup & Recovery" }
 
                             p { style: "color: #a99ec3; font-size: 14px; margin-bottom: 12px;",
-                                "Generate, import, or manage GPG signing keys for securely signing packages and repos."
+                                "Backup your GPG private keys to Firebase for OS reinstall recovery. Keys are encrypted before upload."
                             }
 
                             div { style: "display: flex; gap: 8px; margin-bottom: 12px;",
                                 button {
                                     style: "background: linear-gradient(135deg, #1f1631 0%, #181024 100%); color: #7aebbe; border: 1px solid #7aebbe; cursor: pointer; padding: 8px 16px; border-radius: 6px; font-size: 12px;",
                                     onclick: move |_| {
+                                        let mut status = gpg_status.clone();
                                         spawn(async move {
-                                            match crate::gpg::list_secret_keys().await {
+                                            match crate::services::gpg_backup::list_gpg_keys() {
                                                 Ok(keys) => {
-                                                    log::info!("Found {} GPG secret keys", keys.len());
-                                                    for key in keys {
-                                                        log::info!("  {} - {} ({})", key.key_id, key.name, key.email);
-                                                    }
+                                                    let msg = if keys.is_empty() {
+                                                        "⚠️ No GPG keys found\nGenerate one with: gpg --full-gen-key".to_string()
+                                                    } else {
+                                                        let mut result = format!("✅ Found {} GPG secret keys:\n", keys.len());
+                                                        for key in &keys {
+                                                            result.push_str(&format!("   • {}\n", key));
+                                                        }
+                                                        result
+                                                    };
+                                                    status.set(msg);
                                                 }
-                                                Err(e) => log::error!("Failed to list GPG keys: {}", e),
+                                                Err(e) => status.set(format!("❌ Failed to list GPG keys: {}", e)),
                                             }
                                         });
                                     },
-                                    "📋 List Keys"
+                                    "📋 List Local Keys"
                                 }
 
                                 button {
-                                    style: "background: linear-gradient(135deg, #1f1631 0%, #181024 100%); color: #7aebbe; border: 1px solid #7aebbe; cursor: pointer; padding: 8px 16px; border-radius: 6px; font-size: 12px;",
+                                    style: "background: linear-gradient(135deg, #1f1631 0%, #181024 100%); color: #ffcc00; border: 1px solid #ffcc00; cursor: pointer; padding: 8px 16px; border-radius: 6px; font-size: 12px;",
                                     onclick: move |_| {
-                                        log::info!("Open terminal to generate GPG key: gpg --full-gen-key");
+                                        let auth = auth_signal_clone();
+                                        let mut status = gpg_status.clone();
+                                        if let Some(user) = auth.get_user() {
+                                            spawn(async move {
+                                                match crate::services::gpg_backup::list_backed_up_keys(&user).await {
+                                                    Ok(keys) => {
+                                                        let msg = if keys.is_empty() {
+                                                            "⚠️ No backed up keys found in Firebase".to_string()
+                                                        } else {
+                                                            let mut result = format!("✅ Found {} backed up keys:\n", keys.len());
+                                                            for key in &keys {
+                                                                result.push_str(&format!("   • {}\n", key));
+                                                            }
+                                                            result
+                                                        };
+                                                        status.set(msg);
+                                                    }
+                                                    Err(e) => status.set(format!("❌ Failed to list backed up keys: {}", e)),
+                                                }
+                                            });
+                                        } else {
+                                            status.set("⚠️ Not authenticated - please login first".to_string());
+                                        }
                                     },
-                                    "➕ Generate New Key"
+                                    "☁️ List Cloud Backups"
+                                }
+
+                                button {
+                                    style: "background: linear-gradient(135deg, #1f1631 0%, #181024 100%); color: #e040fb; border: 1px solid #e040fb; cursor: pointer; padding: 8px 16px; border-radius: 6px; font-size: 12px;",
+                                    onclick: move |_| {
+                                        let auth = auth_signal_clone();
+                                        let mut status = gpg_status.clone();
+                                        if let Some(user) = auth.get_user() {
+                                            log::info!("🔑 GPG Backup: User authenticated - uid: {}, token length: {}", user.uid, user.id_token.len());
+                                            spawn(async move {
+                                                match crate::services::gpg_backup::list_gpg_keys() {
+                                                    Ok(keys) if !keys.is_empty() => {
+                                                        let key_id = &keys[0];
+                                                        status.set(format!("💾 Backing up GPG key: {}...", key_id));
+                                                        log::info!("📤 Backing up GPG key {} to Firebase", key_id);
+                                                        match crate::services::gpg_backup::backup_gpg_key(&user, key_id).await {
+                                                            Ok(_) => {
+                                                                status.set(format!("✅ GPG key backed up successfully!\n   Key ID: {}\n   Encrypted with your Firebase UID", key_id));
+                                                            }
+                                                            Err(e) => {
+                                                                log::error!("❌ GPG backup error: {}", e);
+                                                                status.set(format!("❌ Backup failed: {}\n   Check Firebase permissions and authentication", e));
+                                                            }
+                                                        }
+                                                    }
+                                                    Ok(_) => status.set("⚠️ No GPG keys found\nGenerate one with: gpg --full-gen-key".to_string()),
+                                                    Err(e) => status.set(format!("❌ Failed to list keys: {}", e)),
+                                                }
+                                            });
+                                        } else {
+                                            log::warn!("⚠️ GPG Backup: User not authenticated");
+                                            status.set("⚠️ Not authenticated - please login first".to_string());
+                                        }
+                                    },
+                                    "💾 Backup to Firebase"
                                 }
 
                                 button {
                                     style: "background: linear-gradient(135deg, #1f1631 0%, #181024 100%); color: #7aebbe; border: 1px solid #7aebbe; cursor: pointer; padding: 8px 16px; border-radius: 6px; font-size: 12px;",
                                     onclick: move |_| {
                                         let auth = auth_signal_clone();
-                                        if let Some(_user) = auth.get_user() {
-                                            log::info!("Saved GPG key to Firebase (encrypted)");
+                                        let mut status = gpg_status.clone();
+                                        if let Some(user) = auth.get_user() {
+                                            spawn(async move {
+                                                match crate::services::gpg_backup::list_backed_up_keys(&user).await {
+                                                    Ok(keys) if !keys.is_empty() => {
+                                                        let key_id = &keys[0];
+                                                        status.set(format!("📥 Restoring GPG key: {}...", key_id));
+                                                        match crate::services::gpg_backup::restore_gpg_key(&user, key_id).await {
+                                                            Ok(_) => {
+                                                                status.set(format!("✅ GPG key restored successfully!\n   Key ID: {}", key_id));
+                                                            }
+                                                            Err(e) => status.set(format!("❌ Restore failed: {}", e)),
+                                                        }
+                                                    }
+                                                    Ok(_) => status.set("⚠️ No backed up keys found in Firebase".to_string()),
+                                                    Err(e) => status.set(format!("❌ Failed to list backups: {}", e)),
+                                                }
+                                            });
                                         } else {
-                                            log::warn!("Cannot save: not authenticated");
+                                            status.set("⚠️ Not authenticated - please login first".to_string());
                                         }
                                     },
-                                    "☁️ Save to Firebase"
+                                    "📥 Restore from Firebase"
+                                }
+                            }
+
+                            // GPG Status Display
+                            if !gpg_status().is_empty() {
+                                div { style: "margin-top: 12px; padding: 12px; background: rgba(58, 42, 80, 0.3); border-radius: 8px; border-left: 3px solid #e040fb; color: #f7f2ff; font-size: 13px; white-space: pre-wrap; font-family: ui-monospace, monospace;",
+                                    "{gpg_status()}"
                                 }
                             }
 
                             p { style: "color: #cbd5ff; font-size: 12px; background: rgba(58, 42, 80, 0.3); padding: 10px; border-radius: 6px; border-left: 2px solid #e040fb;",
-                                "Keys are encrypted with AES-256-GCM before saving to Firebase. Only accessible with your user credentials."
+                                "🔐 Keys are encrypted with AES-256-GCM before saving to Firebase. Only accessible with your credentials."
+                            }
+
+                            p { style: "color: #ffcc00; font-size: 11px; margin-top: 8px;",
+                                "💡 Tip: Generate a new GPG key with: gpg --full-gen-key"
                             }
                         }
 

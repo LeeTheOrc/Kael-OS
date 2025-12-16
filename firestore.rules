@@ -13,6 +13,24 @@ service cloud.firestore {
         // Allow the authenticated user to read, write, create, and delete their own credentials
         allow read, write, create, delete: if request.auth != null && request.auth.uid == userId;
       }
+      
+      // Match any document in the 'api_keys' subcollection for that user
+      match /api_keys/{keyId} {
+        // Allow the authenticated user to read, write, create, and delete their own API keys
+        allow read, write, create, delete: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Match any document in the 'gpg_keys' subcollection for that user
+      match /gpg_keys/{keyId} {
+        // Allow the authenticated user to read, write, create, and delete their own GPG keys
+        allow read, write, create, delete: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Match any document in the 'projects' subcollection for that user
+      match /projects/{projectId} {
+        // Allow the authenticated user to read, write, create, and delete their own projects
+        allow read, write, create, delete: if request.auth != null && request.auth.uid == userId;
+      }
     }
   }
 }

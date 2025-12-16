@@ -471,3 +471,17 @@ pub async fn delete_project_from_cloud(
 ) -> Result<(), String> {
     app_projects::delete_project_from_firebase(&id_token, &user_id, &project_id).await
 }
+
+// ==================== SYSTEM CONTEXT ====================
+
+/// Initialize or get system context (hardware/software detection)
+#[tauri::command]
+pub async fn get_system_context(app: tauri::AppHandle) -> Result<crate::services::system_context::SystemContext, String> {
+    crate::services::first_launch::get_or_init_context(&app).await
+}
+
+/// Refresh system context (after installing Ollama, etc.)
+#[tauri::command]
+pub async fn refresh_system_context(app: tauri::AppHandle) -> Result<crate::services::system_context::SystemContext, String> {
+    crate::services::first_launch::refresh_context(&app).await
+}

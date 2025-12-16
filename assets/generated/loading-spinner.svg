@@ -1,0 +1,23 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="spinnerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e040fb;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7aebbe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffcc00;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer ring -->
+  <circle cx="32" cy="32" r="28" fill="none" stroke="url(#spinnerGradient)" stroke-width="4" stroke-linecap="round" stroke-dasharray="140 40" opacity="0.3"/>
+  
+  <!-- Animated ring -->
+  <circle cx="32" cy="32" r="28" fill="none" stroke="url(#spinnerGradient)" stroke-width="4" stroke-linecap="round" stroke-dasharray="100 80">
+    <animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Inner pulses -->
+  <circle cx="32" cy="32" r="12" fill="#e040fb" opacity="0.4">
+    <animate attributeName="r" values="8;14;8" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite"/>
+  </circle>
+</svg>

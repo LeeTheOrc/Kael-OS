@@ -11,6 +11,17 @@ AI-native desktop forge built in Rust with Dioxus + Tauri. No Node/npm/pnpm requ
 - **Modular Panels**: Header, chat, left/right sidebars, settings
 - **Pure Rust Build**: No Node toolchain needed
 
+## 📚 Documentation
+
+**All documentation is organized by purpose:**
+
+- **[DOCS_INDEX.md](DOCS_INDEX.md)** - Master navigation to all guides
+- **[00_START_HERE.md](00_START_HERE.md)** - New user quick start
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Command cheat sheet
+- **User Guides** → [`docs/user/`](docs/user/)
+- **Developer Docs** → [`docs/dev/`](docs/dev/)
+- **Deployment** → [`docs/deploy/`](docs/deploy/)
+
 ## Quick Start
 
 ### Prerequisites

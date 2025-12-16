@@ -16,19 +16,47 @@ use crate::llm;
 // Strip ANSI escape sequences from text (robustly skips ESC sequences)
 fn strip_ansi(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
-    let mut in_escape = false;
-    for ch in text.chars() {
-        if !in_escape {
-            if ch == '\x1b' {
-                in_escape = true;
-            } else {
-                out.push(ch);
+    let mut chars = text.chars().peekable();
+    
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\x1b' => {
+                // ESC sequence detected - skip until we find the terminator
+                if chars.peek() == Some(&'[') {
+                    chars.next(); // Skip '['
+                    // CSI sequence: ESC [ ... final_byte
+                    // Final byte is in range 0x40-0x7E (@A-Z[\]^_`a-z{|}~)
+                    while let Some(&next_ch) = chars.peek() {
+                        chars.next();
+                        if ('@'..='~').contains(&next_ch) {
+                            break;
+                        }
+                    }
+                } else if chars.peek() == Some(&']') {
+                    chars.next(); // Skip ']'
+                    // OSC sequence: ESC ] ... BEL or ESC \
+                    while let Some(&next_ch) = chars.peek() {
+                        chars.next();
+                        if next_ch == '\x07' {
+                            break; // BEL
+                        }
+                        if next_ch == '\x1b' {
+                            if chars.peek() == Some(&'\\') {
+                                chars.next(); // ESC \
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    // Other ESC sequences (Fe, Fp, etc.)
+                    chars.next();
+                }
             }
-        } else {
-            // Inside an escape: skip until we hit a final byte in the range '@'..='~'
-            // This covers CSI (ESC [ ... final) and other ANSI sequences
-            if ('@'..='~').contains(&ch) {
-                in_escape = false;
+            '\x00'..='\x1f' if ch != '\n' && ch != '\r' && ch != '\t' => {
+                // Skip other control characters except newline, carriage return, and tab
+            }
+            _ => {
+                out.push(ch);
             }
         }
     }
@@ -70,7 +98,7 @@ fn save_projects(projects: &[AppProject]) {
 
 #[allow(non_snake_case)]
 pub fn App() -> Element {
-    let quick_actions = vec![
+    let _quick_actions = vec![
         (
             "New Script",
             "Launch a fresh Kael script pad",
@@ -88,7 +116,7 @@ pub fn App() -> Element {
         ),
     ];
 
-    let pinned_panels = vec![
+    let _pinned_panels = vec![
         ("Terminal", "Active", "#7aebbe"),
         ("Firebase", "Linked", "#ffcc00"),
         ("Local DB", "Online", "#e040fb"),
@@ -103,7 +131,7 @@ pub fn App() -> Element {
     let mut clear_chat_trigger = use_signal(|| false);
     let chat_messages_out = use_signal(Vec::<crate::components::chat::Message>::new);
     let hybrid_assist = use_signal(|| false);
-    let mut show_brainstorm = use_signal(|| false);
+    let show_brainstorm = use_signal(|| false);
     let pty_instance = use_signal(|| {
         use crate::terminal::PtyTerminal;
         PtyTerminal::new()
@@ -134,36 +162,150 @@ pub fn App() -> Element {
         });
     }
 
-    // Load hybrid assist flag from cache
+    // Auto-refresh token before it expires (keeps user logged in indefinitely)
+    {
+        let mut auth_signal = auth_service.clone();
+        use_effect(move || {
+            spawn(async move {
+                loop {
+                    // Check every 30 minutes
+                    tokio::time::sleep(std::time::Duration::from_secs(30 * 60)).await;
+                    
+                    let should_refresh = {
+                        let auth = auth_signal.read();
+                        if let Some(user) = auth.get_user() {
+                            if let Some(expires_in) = user.expires_in {
+                                let now = chrono::Utc::now().timestamp();
+                                // Refresh if token expires in less than 10 minutes
+                                expires_in - now < 10 * 60
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        }
+                    };
+
+                    if should_refresh {
+                        let current_user = auth_signal.read().get_user();
+                        if let Some(user) = current_user {
+                            if let Some(refresh_token) = &user.refresh_token {
+                                log::info!("🔄 Auto-refreshing token...");
+                                match crate::auth::AuthService::refresh_token_public(refresh_token).await {
+                                    Ok(mut refreshed_user) => {
+                                        // Preserve existing user info (email, name, photo)
+                                        refreshed_user.email = user.email;
+                                        refreshed_user.name = user.name;
+                                        refreshed_user.photo_url = user.photo_url;
+                                        
+                                        auth_signal.write().set_user(refreshed_user);
+                                        log::info!("✅ Token auto-refreshed successfully");
+                                    }
+                                    Err(e) => {
+                                        log::error!("❌ Auto-refresh failed: {}", e);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    // Load hybrid assist flag from cache - default to hybrid, fallback to local-only if no API keys
     {
         let mut ha = hybrid_assist.clone();
         use_effect(move || {
-            if let Ok(v) = std::fs::read_to_string("/tmp/kael_hybrid_assist.json") {
-                if v.trim() == "true" {
-                    ha.set(true);
-                }
+            // Check if we have any API keys cached
+            let has_api_keys = std::fs::read_to_string("/tmp/kael_cached_keys.json")
+                .ok()
+                .and_then(|s| serde_json::from_str::<Vec<serde_json::Value>>(&s).ok())
+                .map(|keys| !keys.is_empty())
+                .unwrap_or(false);
+            
+            // If we have API keys, enable hybrid mode by default
+            if has_api_keys {
+                ha.set(true);
+                let _ = std::fs::write("/tmp/kael_hybrid_assist.json", "true");
+                log::info!("🔄 Hybrid mode enabled - API keys detected");
+            } else {
+                // No API keys - use local-only (Ollama)
+                ha.set(false);
+                let _ = std::fs::write("/tmp/kael_hybrid_assist.json", "false");
+                log::info!("🏠 Local-only mode - no API keys found, using Ollama");
             }
         });
     }
 
+    // Initialize system context on first launch (detects hardware/software)
+    use_effect(move || {
+        spawn(async move {
+            log::info!("🔍 Initializing system context...");
+            
+            // This will detect on first launch or load existing context
+            match crate::services::first_launch::get_or_init_context_standalone().await {
+                Ok(ctx) => {
+                    log::info!("✅ System context loaded:");
+                    log::info!("   CPU: {} ({} cores)", ctx.hardware.cpu_brand, ctx.hardware.cpu_cores);
+                    log::info!("   RAM: {:.1}GB total", ctx.hardware.total_ram_gb);
+                    if let Some(gpu) = &ctx.hardware.gpu_name {
+                        log::info!("   GPU: {}", gpu);
+                    }
+                    log::info!("   OS: {} {}", ctx.software.os_name, ctx.software.os_version);
+                    if !ctx.software.ollama_models.is_empty() {
+                        log::info!("   Ollama models: {}", ctx.software.ollama_models.join(", "));
+                    }
+                    log::info!("📝 AI will use this context for system-aware responses");
+                }
+                Err(e) => {
+                    log::warn!("⚠️  System context detection failed (non-critical): {}", e);
+                    log::info!("   AI will continue without detailed system context");
+                }
+            }
+        });
+    });
+
     // Ensure Ollama is running, then warm local AI on app start
     use_effect(move || {
         spawn(async move {
-            // Try to ensure Ollama service is running
-            crate::services::ollama_manager::ensure_ollama_running().await;
+            log::info!("🚀 Starting comprehensive local AI initialization...");
             
-            // Wait a moment for Ollama to be ready
-            tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+            // Initialize all local AI services with system capability detection
+            let startup_result = crate::services::local_ai_startup::initialize_local_ai().await;
             
-            // Now warm the model
-            let model = std::env::var("OLLAMA_WARMUP_MODEL")
-                .or_else(|_| std::env::var("OLLAMA_MODEL"))
-                .unwrap_or_else(|_| "llama3:latest".to_string());
-            let warmed = llm::warm_local_model(&model).await;
-            if warmed {
-                log::info!("Local AI warmup complete for model {}", model);
+            // Log startup results
+            log::info!("📊 Local AI Startup Results:");
+            for msg in &startup_result.startup_messages {
+                log::info!("  {}", msg);
+            }
+            
+            // If any systems are ready, try to warm the model
+            if startup_result.all_systems_ready {
+                log::info!("✅ At least one local AI system is ready, warming model...");
+                
+                // Find recommended model from statuses
+                let recommended_model = startup_result
+                    .statuses
+                    .iter()
+                    .find_map(|s| s.recommended_model.clone())
+                    .unwrap_or_else(|| "llama3:latest".to_string());
+                
+                // Give services a moment to stabilize
+                tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+                
+                // Warm the model
+                let warmed = llm::warm_local_model(&recommended_model).await;
+                if warmed {
+                    log::info!("✅ Local AI model warmup complete for: {}", recommended_model);
+                } else {
+                    log::warn!("⚠️  Local AI warmup failed or service unavailable");
+                }
             } else {
-                log::warn!("Local AI warmup failed or Ollama unavailable");
+                log::warn!(
+                    "⚠️  No local AI systems ready. App will use cloud fallbacks. Startup took {}ms",
+                    startup_result.total_startup_time_ms
+                );
             }
         });
     });
@@ -290,76 +432,25 @@ pub fn App() -> Element {
             } else {
                 div {
                     class: "main-container",
-                    // Left Panel
+                    // Left Panel - Chat Controls
                     aside {
                     class: "resizable-left pane-scroll",
                     div { class: "flex items-center gap-3 mb-4",
                         div { class: "p-2 rounded-lg border", style: "border-color: #3a2d56; background: radial-gradient(circle at 30% 30%, #e040fb 0%, #120e1a 55%, #0f0c1a 100%); box-shadow: inset 2px 0 0 #ffcc00;",
                             KaelSigilIcon { class: "w-5 h-5" }
                         }
-                        h2 { class: "font-bold text-lg", style: "color: #ffcc00; letter-spacing: 0.02em;", "Project Explorer" }
+                        h2 { class: "font-bold text-lg", style: "color: #ffcc00; letter-spacing: 0.02em;", "Chat Controls" }
                     }
 
+                    // Chat Controls
                     div { class: "left-card p-3 mb-4",
                         div { class: "flex items-center justify-between mb-3",
-                            span { class: "section-label", "Quick Actions" }
+                            span { class: "section-label", "Chat Controls" }
                             SparkIcon { class: "w-4 h-4 text-[#ffcc00]" }
-                        }
-                        for (title, desc, gradient) in quick_actions.iter() {
-                            button {
-                                class: "w-full text-left mb-2 last:mb-0",
-                                style: "padding: 10px 12px; border-radius: 10px; border: 1px solid #3a2d56; color: #120e1a; background: {gradient}; box-shadow: 0 12px 24px #00000066; font-weight: 700;",
-                                div { style: "font-size: 14px;", "{title}" }
-                                div { style: "font-size: 12px; color: #0f0b1a; opacity: 0.8;", "{desc}" }
-                            }
-                        }
-                    }
-
-                    div { class: "left-card p-3 mb-4",
-                        div { class: "flex items-center justify-between mb-3",
-                            span { class: "section-label", "Terminal Status" }
-                            if current_command() != "" { PanelIcon { class: "w-4 h-4 text-[#7aebbe]" } } else { PanelIcon { class: "w-4 h-4 text-[#3a2d56]" } }
-                        }
-                        if current_command() != "" {
-                            div { style: "padding: 10px; background: linear-gradient(135deg, #1f1631 0%, #181024 100%); border: 1px solid #3a2d56; border-radius: 8px; color: #7aebbe; font-size: 12px; font-family: monospace; overflow-x: auto; word-break: break-all;",
-                                "$ {current_command()}"
-                            }
-                        } else {
-                            span { style: "color: #a99ec3; font-size: 13px;", "No active command" }
-                        }
-                    }
-
-                    div { class: "left-card p-3",
-                        div { class: "flex items-center justify-between mb-3",
-                            span { class: "section-label", "Pinned Panels" }
-                            PanelIcon { class: "w-4 h-4 text-[#7aebbe]" }
-                        }
-                        for (panel, state, color) in pinned_panels.iter() {
-                            div { class: "flex items-center justify-between mb-2 last:mb-0",
-                                div { class: "flex items-center gap-2",
-                                    div { class: "chip", style: "border-color: #3a2d56; color: {color};", KaelSigilIcon { class: "w-4 h-4" } }
-                                    span { style: "color: #f7f2ff;", "{panel}" }
-                                }
-                                span { style: "color: {color}; font-size: 12px;", "{state}" }
-                            }
-                        }
-                        // Brainstorm Ideas toggle
-                        button {
-                            class: "w-full mt-3",
-                            style: "padding: 8px 12px; border-radius: 8px; border: 1px solid #3a2d56; background: linear-gradient(135deg, #e040fb 0%, #ffcc00 100%); color: #120e1a; font-weight: 600; font-size: 13px;",
-                            onclick: move |_| show_brainstorm.set(!show_brainstorm()),
-                            if show_brainstorm() { "💡 Close Ideas" } else { "💡 Open Ideas Panel" }
-                        }
-                    }
-
-                    div { class: "left-card p-3",
-                        div { class: "flex items-center justify-between mb-3",
-                            span { class: "section-label", "Chat History" }
-                            PanelIcon { class: "w-4 h-4 text-[#ffcc00]" }
                         }
                         button {
                             class: "w-full mb-2",
-                            style: "padding: 8px 12px; border-radius: 8px; border: 1px solid #3a2d56; background: linear-gradient(135deg, #7aebbe 0%, #5af0c8 100%); color: #120e1a; font-weight: 600; font-size: 13px;",
+                            style: "padding: 10px 12px; border-radius: 8px; border: 1px solid #3a2d56; background: linear-gradient(135deg, #7aebbe 0%, #5af0c8 100%); color: #120e1a; font-weight: 600; font-size: 13px; box-shadow: 0 4px 12px rgba(122, 235, 190, 0.3);",
                             onclick: move |_| {
                                 use chrono::Local;
                                 let timestamp = Local::now().format("%Y%m%d_%H%M%S").to_string();
@@ -387,7 +478,6 @@ pub fn App() -> Element {
                                     }
                                     Err(e) => {
                                         if e.kind() == std::io::ErrorKind::NotFound {
-                                            // Use live in-memory messages from ChatPanel
                                             let live = chat_messages_out();
                                             if live.is_empty() {
                                                 log::info!("No chat history file to export; writing empty export");
@@ -414,13 +504,12 @@ pub fn App() -> Element {
                         }
                         button {
                             class: "w-full",
-                            style: "padding: 8px 12px; border-radius: 8px; border: 1px solid #3a2d56; background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%); color: white; font-weight: 600; font-size: 13px;",
+                            style: "padding: 10px 12px; border-radius: 8px; border: 1px solid #3a2d56; background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%); color: white; font-weight: 600; font-size: 13px; box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);",
                             onclick: move |_| {
                                 match std::fs::remove_file("/tmp/kael_chat_history.json") {
                                     Ok(_) => {
                                         log::info!("Chat history cleared");
                                         clear_chat_trigger.set(true);
-                                        // reset back to false after short delay to allow future clears
                                         let mut trig = clear_chat_trigger.clone();
                                         spawn(async move {
                                             tokio::time::sleep(std::time::Duration::from_millis(50)).await;
@@ -428,7 +517,6 @@ pub fn App() -> Element {
                                         });
                                     },
                                     Err(e) => {
-                                        // Ignore if file did not exist
                                         if e.kind() == std::io::ErrorKind::NotFound {
                                             log::info!("Chat history already clear (file missing)");
                                             clear_chat_trigger.set(true);
@@ -443,7 +531,22 @@ pub fn App() -> Element {
                                     }
                                 }
                             },
-                            "🗑️ Delete Chat"
+                            "🗑️ Clear Chat"
+                        }
+                    }
+
+                    // Terminal Status
+                    div { class: "left-card p-3",
+                        div { class: "flex items-center justify-between mb-3",
+                            span { class: "section-label", "Terminal Status" }
+                            if current_command() != "" { PanelIcon { class: "w-4 h-4 text-[#7aebbe]" } } else { PanelIcon { class: "w-4 h-4 text-[#3a2d56]" } }
+                        }
+                        if current_command() != "" {
+                            div { style: "padding: 10px; background: linear-gradient(135deg, #1f1631 0%, #181024 100%); border: 1px solid #3a2d56; border-radius: 8px; color: #7aebbe; font-size: 12px; font-family: monospace; overflow-x: auto; word-break: break-all;",
+                                "$ {current_command()}"
+                            }
+                        } else {
+                            span { style: "color: #a99ec3; font-size: 13px;", "No active command" }
                         }
                     }
                 }
@@ -476,46 +579,24 @@ pub fn App() -> Element {
                                 }
                             }
                         }
-                        TerminalPanel { term_out: terminal_output.clone() }
+                        TerminalPanel { 
+                            term_out: terminal_output.clone(),
+                            pty: pty_instance.clone()
+                        }
                     }
                 },
                 // Right Splitter
                 div {
                     class: "splitter",
                 },
-                // Right Panel
+                // Right Panel - Todo & App Status
                 aside {
                     class: "resizable-right pane-scroll",
-                    h2 { class: "font-bold text-lg mb-4", style: "color: #7aebbe; letter-spacing: 0.02em;", "SYSTEM BLUEPRINT" }
-
-                    div { class: "status-card mb-3",
-                        div { class: "flex items-center gap-2 mb-2", KaelSigilIcon { class: "w-4 h-4 text-[#ffcc00]" }, span { style: "color: #f7f2ff; font-weight: 700;", "AI Providers" } }
-                        p { style: "margin: 0; color: #cbd5ff; font-size: 13px;", "Ollama + Mistral active. Gemini staged." }
-                        div { style: "margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;",
-                            span { class: "chip", style: "color: #ffcc00;", "Primary" }
-                            span { class: "chip", style: "color: #e040fb;", "Fallback" }
-                            span { class: "chip", style: "color: #7aebbe;", "Local" }
+                    div { class: "flex items-center gap-3 mb-4",
+                        div { class: "p-2 rounded-lg border", style: "border-color: #3a2d56; background: radial-gradient(circle at 30% 30%, #7aebbe 0%, #120e1a 55%, #0f0c1a 100%); box-shadow: inset 2px 0 0 #e040fb;",
+                            SparkIcon { class: "w-5 h-5" }
                         }
-                    }
-
-                    div { class: "status-card mb-3",
-                        div { class: "flex items-center gap-2 mb-2", SparkIcon { class: "w-4 h-4 text-[#e040fb]" }, span { style: "color: #f7f2ff; font-weight: 700;", "Build Status" } }
-                        p { style: "margin: 0; color: #cbd5ff; font-size: 13px;", "Dev profile ready. Latest shell synced." }
-                        div { style: "margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;",
-                            span { class: "chip", style: "color: #7aebbe;", "Rust" }
-                            span { class: "chip", style: "color: #ffcc00;", "Tauri" }
-                            span { class: "chip", style: "color: #e040fb;", "Forge" }
-                        }
-                    }
-
-                    div { class: "status-card mb-3",
-                        div { class: "flex items-center gap-2 mb-2", PanelIcon { class: "w-4 h-4 text-[#7aebbe]" }, span { style: "color: #f7f2ff; font-weight: 700;", "Runtime" } }
-                        p { style: "margin: 0; color: #cbd5ff; font-size: 13px;", "Arch + paru translator wired." }
-                        div { style: "margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;",
-                            span { class: "chip", style: "color: #7aebbe;", "Arch" }
-                            span { class: "chip", style: "color: #ffcc00;", "Paru" }
-                            span { class: "chip", style: "color: #e040fb;", "LLM Ready" }
-                        }
+                        h2 { class: "font-bold text-lg", style: "color: #7aebbe; letter-spacing: 0.02em;", "Todo & App Status" }
                     }
 
                     // App Projects Tracker

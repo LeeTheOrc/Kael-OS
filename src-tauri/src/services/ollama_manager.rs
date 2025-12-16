@@ -5,6 +5,7 @@ use std::process::Command;
 
 /// Status of Ollama installation and models
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
 pub enum OllamaStatus {
     /// All systems go - Ollama running with models available
     Ready,

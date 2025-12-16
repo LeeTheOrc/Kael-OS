@@ -7,3 +7,18 @@ dist/
 .env.local
 .vscode/settings.json
 firebase-service-account.json
+
+# User-specific API keys (NEVER commit these!)
+**/kael_api_keys
+**/.kael_api_keys
+*api_keys*
+*.key
+*.secret
+
+# User documents with keys
+**/Documents/ai\ keys
+**/Documents/*keys*
+
+# Temporary key caches
+/tmp/kael_cached_api_keys.json
+/tmp/kael_cached_keys.json

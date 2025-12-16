@@ -1,4 +1,5 @@
 // src-tauri/src/components/header.rs
+use crate::components::gpu_status::GpuStatusIndicator;
 use crate::components::icons::{CogIcon, KaelSigilIcon, SparkIcon};
 use dioxus::prelude::*;
 
@@ -24,6 +25,11 @@ pub fn Header(mut props: HeaderProps) -> Element {
                     KaelSigilIcon { class: "w-5 h-5" }
                 },
                 span { class: "font-bold text-lg tracking-wide", style: "color: #f7f2ff;", "KAEL OS" }
+            },
+            // Center - GPU Status
+            div {
+                class: "flex items-center justify-center flex-1",
+                GpuStatusIndicator { }
             },
             // Right side - Settings Menu only
             div {

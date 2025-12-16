@@ -7,7 +7,67 @@ use dioxus::events::Key;
 use dioxus::prelude::*;
 use serde::{Deserialize, Serialize};
 
-// Detect if query is system-related and should use local Ollama
+// ============================================================================
+// PROVIDER ICON HELPERS - Convert provider names to compact icons
+// ============================================================================
+
+/// Convert LLMProvider enum to display name
+fn provider_enum_to_label(provider: &llm::LLMProvider) -> &'static str {
+    match provider {
+        llm::LLMProvider::Ollama => "Ollama (Local)",
+        llm::LLMProvider::Mistral => "Mistral AI",
+        llm::LLMProvider::Gemini => "Google Gemini",
+        llm::LLMProvider::Copilot => "GitHub Copilot",
+        llm::LLMProvider::CopilotAgent => "GitHub Copilot CLI (New)",
+        llm::LLMProvider::Office365AI => "Office 365 AI",
+        llm::LLMProvider::GoogleOneAI => "Google One AI",
+        llm::LLMProvider::Minstrel => "Minstrel AI",
+    }
+}
+
+/// Convert provider name to icon representation
+/// 🧠 for local Ollama, ☁️ + 3 letters for cloud providers
+fn provider_to_icon(provider: &str) -> String {
+    if provider.contains("Ollama") || provider.contains("Local") {
+        "🧠".to_string()
+    } else if provider.contains("Mistral") {
+        "☁️ MIS".to_string()
+    } else if provider.contains("Gemini") {
+        "☁️ GEM".to_string()
+    } else if provider.contains("Copilot") && provider.contains("CLI") {
+        "☁️ COP".to_string()
+    } else if provider.contains("Copilot") {
+        "☁️ COP".to_string()
+    } else if provider.contains("Office") {
+        "☁️ OFF".to_string()
+    } else if provider.contains("Google One") {
+        "☁️ GO1".to_string()
+    } else if provider.contains("Minstrel") {
+        "☁️ MIN".to_string()
+    } else {
+        "☁️".to_string()
+    }
+}
+
+/// Track provider usage statistics
+fn increment_usage(provider_label: String) {
+    let path = "/tmp/kael_provider_usage.json";
+    let mut map: std::collections::BTreeMap<String, u64> = if let Ok(s) = std::fs::read_to_string(path) {
+        serde_json::from_str(&s).unwrap_or_default()
+    } else { 
+        std::collections::BTreeMap::new() 
+    };
+    *map.entry(provider_label).or_insert(0) += 1;
+    if let Ok(json) = serde_json::to_string(&map) { 
+        let _ = std::fs::write(path, json); 
+    }
+}
+
+// ============================================================================
+// INTELLIGENT QUERY ROUTER - Auto-selects best model based on query type
+// ============================================================================
+
+/// Detect if query is system-related and should use local Ollama
 fn is_system_query(s: &str) -> bool {
     let s_lower = s.to_lowercase();
     let system_keywords = [
@@ -87,28 +147,140 @@ fn is_system_query(s: &str) -> bool {
         .any(|keyword| s_lower.contains(keyword))
 }
 
+/// Detect if GPU is being used by gaming or heavy workload
+fn is_gpu_busy() -> bool {
+    // Check NVIDIA GPU usage
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(output) = std::process::Command::new("nvidia-smi")
+            .args(&["--query-gpu=utilization.gpu", "--format=csv,noheader,nounits"])
+            .output()
+        {
+            if let Ok(gpu_output) = String::from_utf8(output.stdout) {
+                if let Ok(gpu_percent) = gpu_output.trim().parse::<f32>() {
+                    // If GPU is > 50% busy, assume gaming or heavy workload
+                    return gpu_percent > 50.0;
+                }
+            }
+        }
+    }
+    false
+}
+
+/// Classify query type to route to best model
+#[derive(Debug, Clone)]
+enum QueryType {
+    Coding,      // Code writing, debugging - use deepseek-coder
+    Quick,       // Quick lookup, simple questions - use phi3
+    Complex,     // Architecture, deep reasoning - use mixtral
+    System,      // System admin, packages - use ollama local
+}
+
+/// Analyze query and determine best model to use
+fn classify_query(query: &str) -> QueryType {
+    let lower = query.to_lowercase();
+    
+    // Coding keywords
+    let coding_keywords = [
+        "code", "function", "rust", "python", "javascript", "typescript", "java", "c++",
+        "debug", "error", "fix", "implement", "algorithm", "design pattern", "refactor",
+        "write", "create", "build", "compile", "cargo", "npm", "pip", "package.json",
+        "test", "unit test", "integration", "mock", "struct", "trait", "enum",
+        "async", "await", "thread", "concurrency", "performance", "optimization",
+        "pkgbuild", "makefile", "build script", "dependency", "library",
+    ];
+    
+    // Complex reasoning keywords
+    let complex_keywords = [
+        "architecture", "design", "strategy", "approach", "explain", "how does",
+        "why", "compare", "trade-off", "best practice", "pattern", "guide",
+        "tutorial", "learn", "understand", "concept", "theory",
+    ];
+    
+    // Quick lookup keywords
+    let quick_keywords = [
+        "what is", "what are", "how to", "install", "command", "syntax",
+        "example", "usage", "manual", "docs", "help", "where", "when",
+    ];
+    
+    // System/admin keywords
+    let system_keywords = [
+        "systemd", "systemctl", "pacman", "aur", "kernel", "boot", "partition",
+        "mount", "filesystem", "disk", "chmod", "chown", "sudo", "service",
+    ];
+    
+    // Check against each category
+    if system_keywords.iter().any(|&kw| lower.contains(kw)) {
+        return QueryType::System;
+    }
+    
+    if coding_keywords.iter().any(|&kw| lower.contains(kw)) {
+        return QueryType::Coding;
+    }
+    
+    if complex_keywords.iter().any(|&kw| lower.contains(kw)) && lower.len() > 30 {
+        return QueryType::Complex;
+    }
+    
+    if quick_keywords.iter().any(|&kw| lower.contains(kw)) && lower.len() < 50 {
+        return QueryType::Quick;
+    }
+    
+    // Default: classify by query length
+    if lower.len() < 30 {
+        QueryType::Quick
+    } else if lower.len() > 200 {
+        QueryType::Complex
+    } else {
+        QueryType::Coding
+    }
+}
+
+/// Get the best Ollama model for this query type
+fn get_best_local_model(query_type: &QueryType, gpu_available: bool) -> &'static str {
+    match (query_type, gpu_available) {
+        (QueryType::Coding, true) => "deepseek-coder:6.7b",    // GPU-accelerated coding
+        (QueryType::Coding, false) => "phi3:latest",            // CPU fallback - fast
+        (QueryType::Quick, _) => "phi3:latest",                // Always fast for quick
+        (QueryType::Complex, true) => "mixtral:8x7b",          // GPU for deep reasoning
+        (QueryType::Complex, false) => "llama3:latest",        // CPU fallback
+        (QueryType::System, _) => "ollama:auto",               // Let ollama pick
+    }
+}
+
+/// Show user which model is being used and why
+fn get_model_status_message(query_type: &QueryType, _model: &str, gpu_busy: bool) -> String {
+    let model_emoji = match query_type {
+        QueryType::Coding => "💻",
+        QueryType::Quick => "⚡",
+        QueryType::Complex => "🧠",
+        QueryType::System => "🔧",
+    };
+    
+    let gpu_note = if gpu_busy {
+        " (GPU in use - switched to CPU for gaming compatibility)"
+    } else {
+        " (GPU accelerated)"
+    };
+    
+    match query_type {
+        QueryType::Coding => format!("{}  Using deepseek-coder for coding{}", model_emoji, gpu_note),
+        QueryType::Quick => format!("{}  Using phi3 for quick answers", model_emoji),
+        QueryType::Complex => format!("{}  Using heavy reasoning model{}", model_emoji, gpu_note),
+        QueryType::System => format!("{}  Using local system assistant", model_emoji),
+    }
+}
+
 fn provider_label_to_enum(label: &str) -> Option<llm::LLMProvider> {
     match label {
         "Ollama (Local)" => Some(llm::LLMProvider::Ollama),
         "Mistral AI" => Some(llm::LLMProvider::Mistral),
         "Google Gemini" => Some(llm::LLMProvider::Gemini),
         "GitHub Copilot" => Some(llm::LLMProvider::Copilot),
-        "GitHub Copilot CLI" => Some(llm::LLMProvider::CopilotCLI),
+        "GitHub Copilot CLI (New)" => Some(llm::LLMProvider::CopilotAgent),
         "Office 365 AI" => Some(llm::LLMProvider::Office365AI),
         "Google One AI" => Some(llm::LLMProvider::GoogleOneAI),
         _ => None,
-    }
-}
-
-fn provider_enum_to_label(provider: &llm::LLMProvider) -> &'static str {
-    match provider {
-        llm::LLMProvider::Ollama => "Ollama (Local)",
-        llm::LLMProvider::Mistral => "Mistral AI",
-        llm::LLMProvider::Gemini => "Google Gemini",
-        llm::LLMProvider::Copilot => "GitHub Copilot",
-        llm::LLMProvider::CopilotCLI => "GitHub Copilot CLI",
-        llm::LLMProvider::Office365AI => "Office 365 AI",
-        llm::LLMProvider::GoogleOneAI => "Google One AI",
     }
 }
 
@@ -120,14 +292,11 @@ fn build_provider_order() -> Vec<String> {
             }
         }
     }
+    // Default: Ollama first, then cloud providers if keys exist
     vec![
         "Ollama (Local)".to_string(),
         "Mistral AI".to_string(),
         "Google Gemini".to_string(),
-        "GitHub Copilot".to_string(),
-        "GitHub Copilot CLI".to_string(),
-        "Office 365 AI".to_string(),
-        "Google One AI".to_string(),
     ]
 }
 
@@ -152,19 +321,6 @@ fn next_provider_after(
         .map(|(_, p)| p.clone())
         .collect::<Vec<_>>();
     Some((next, rest))
-}
-
-fn increment_usage(provider_label: String) {
-    let path = "/tmp/kael_provider_usage.json";
-    let mut map: std::collections::BTreeMap<String, u64> = if let Ok(s) = std::fs::read_to_string(path) {
-        serde_json::from_str(&s).unwrap_or_default()
-    } else {
-        std::collections::BTreeMap::new()
-    };
-    *map.entry(provider_label).or_insert(0) += 1;
-    if let Ok(json) = serde_json::to_string(&map) {
-        let _ = std::fs::write(path, json);
-    }
 }
 
 // Simple classifier: treat as command if it looks like a shell command
@@ -287,8 +443,34 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
         arboard::Clipboard::new().ok()
     });
     let load_messages = || -> Vec<Message> {
-        if let Ok(json) = std::fs::read_to_string("/tmp/kael_chat_history.json") {
-            serde_json::from_str(&json).unwrap_or_else(|_| {
+        match std::fs::read_to_string("/tmp/kael_chat_history.json") {
+            Ok(json) => match serde_json::from_str::<Vec<Message>>(&json) {
+                Ok(mut msgs) => {
+                    // Apply message limit to prevent memory issues
+                    const MAX_MESSAGES: usize = 500;
+                    if msgs.len() > MAX_MESSAGES {
+                        log::warn!("📦 Chat history has {} messages, trimming to {}", msgs.len(), MAX_MESSAGES);
+                        msgs.drain(0..(msgs.len() - MAX_MESSAGES));
+                    }
+                    log::info!("✅ Loaded {} messages from history", msgs.len());
+                    msgs
+                }
+                Err(e) => {
+                    log::error!("⚠️  Chat history corrupted: {} - Starting fresh (old file backed up)", e);
+                    // Backup corrupted file
+                    let backup = format!("/tmp/kael_chat_history.corrupted.{}", chrono::Local::now().timestamp());
+                    let _ = std::fs::rename("/tmp/kael_chat_history.json", &backup);
+                    vec![Message {
+                        author: "Kael".to_string(),
+                        text: "Greetings, Architect! I am Kael, your partner in creation.".to_string(),
+                        is_streaming: false,
+                        provider: None,
+                        prompt: None,
+                    }]
+                }
+            },
+            Err(_) => {
+                log::debug!("No chat history found, starting fresh");
                 vec![Message {
                     author: "Kael".to_string(),
                     text: "Greetings, Architect! I am Kael, your partner in creation.".to_string(),
@@ -296,21 +478,25 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                     provider: None,
                     prompt: None,
                 }]
-            })
-        } else {
-            vec![Message {
-                author: "Kael".to_string(),
-                text: "Greetings, Architect! I am Kael, your partner in creation.".to_string(),
-                is_streaming: false,
-                provider: None,
-                prompt: None,
-            }]
+            }
         }
     };
 
     let save_messages = |messages: &[Message]| {
-        if let Ok(json) = serde_json::to_string(messages) {
-            let _ = std::fs::write("/tmp/kael_chat_history.json", json);
+        match serde_json::to_string(messages) {
+            Ok(json) => {
+                // Atomic write: write to temp file first, then rename
+                let temp_path = "/tmp/kael_chat_history.tmp";
+                match std::fs::write(temp_path, &json) {
+                    Ok(_) => {
+                        if let Err(e) = std::fs::rename(temp_path, "/tmp/kael_chat_history.json") {
+                            log::error!("Failed to save chat history: {}", e);
+                        }
+                    }
+                    Err(e) => log::error!("Failed to write temp chat history: {}", e),
+                }
+            }
+            Err(e) => log::error!("Failed to serialize chat history: {}", e),
         }
     };
 
@@ -318,6 +504,8 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
     let mut user_input = use_signal(String::new);
     let mut echo_commands = use_signal(|| false);
     let mut sudo_pending = use_signal(|| Option::<String>::None);
+    let mut is_loading = use_signal(|| false);  // Loading indicator
+    let mut loading_message = use_signal(|| String::from("Thinking..."));
     
     // Load user context for smart reformatting (lazy initialization)
     let mut user_context = use_signal(|| None::<UserContext>);
@@ -375,26 +563,10 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
             } else {
                 // Send a tiny warm-up prompt so first real reply is fast
                 // Try llama:latest first (primary), then phi3 (failover)
-                let mut warmed = false;
                 
-                // Try primary: llama:latest
-                warmed = llm::warm_local_model("llama:latest").await;
-                
-                // If llama failed, try failover: phi3
-                if !warmed {
-                    warmed = llm::warm_local_model("phi3").await;
-                }
-                
-                if !warmed {
-                    let mut current = msgs.write();
-                    current.push(Message {
-                        author: "Kael".to_string(),
-                        text: "Local AI responded to ping but warm-up prompt failed. I will still try cloud fallbacks if needed.".to_string(),
-                        is_streaming: false,
-                        ..Default::default()
-                    });
-                    save_messages(&current);
-                }
+                // Try primary: llama:latest and phi3
+                let _ = llm::warm_local_model("llama:latest").await;
+                let _ = llm::warm_local_model("phi3").await;
             }
         });
     });
@@ -473,6 +645,10 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
             let mut msgs = messages.clone();
             let input_clone = corrected_input.clone();
             
+            // Show loading indicator
+            is_loading.set(true);
+            loading_message.set(String::from("🤔 Thinking..."));
+            
             spawn(async move {
                 let user_opt = props.auth_service.read().get_user();
                 
@@ -515,7 +691,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                             "Mistral AI" => Some(LLMProvider::Mistral),
                             "Google Gemini" => Some(LLMProvider::Gemini),
                             "GitHub Copilot" => Some(LLMProvider::Copilot),
-                            "GitHub Copilot CLI" => Some(LLMProvider::CopilotCLI),
+                            "GitHub Copilot CLI (New)" => Some(LLMProvider::CopilotAgent),
                             "Office 365 AI" => Some(LLMProvider::Office365AI),
                             "Google One AI" => Some(LLMProvider::GoogleOneAI),
                             _ => None,
@@ -536,7 +712,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                     (LLMProvider::Mistral, None),
                                     (LLMProvider::Gemini, None),
                                     (LLMProvider::Copilot, None),
-                                    (LLMProvider::CopilotCLI, None),
+                                    (LLMProvider::CopilotAgent, None),
                                     (LLMProvider::Office365AI, None),
                                     (LLMProvider::GoogleOneAI, None),
                                 ]
@@ -546,7 +722,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                 (LLMProvider::Mistral, None),
                                 (LLMProvider::Gemini, None),
                                 (LLMProvider::Copilot, None),
-                                (LLMProvider::CopilotCLI, None),
+                                (LLMProvider::CopilotAgent, None),
                                 (LLMProvider::Office365AI, None),
                                 (LLMProvider::GoogleOneAI, None),
                             ]
@@ -556,7 +732,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                             (LLMProvider::Mistral, None),
                             (LLMProvider::Gemini, None),
                             (LLMProvider::Copilot, None),
-                            (LLMProvider::CopilotCLI, None),
+                            (LLMProvider::CopilotAgent, None),
                             (LLMProvider::Office365AI, None),
                             (LLMProvider::GoogleOneAI, None),
                         ]
@@ -575,40 +751,19 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                 let user_ref = user_opt.as_ref();
                 match llm::send_request_with_fallback(req, user_ref, fallback_providers).await {
                     Ok(res) => {
-                        // Track provider usage counts
-                        {
-                            let path = "/tmp/kael_provider_usage.json";
-                            let mut map: std::collections::BTreeMap<String, u64> = if let Ok(s) = std::fs::read_to_string(path) {
-                                serde_json::from_str(&s).unwrap_or_default()
-                            } else { std::collections::BTreeMap::new() };
-                            let name = match res.provider {
-                                llm::LLMProvider::Ollama => "Ollama (Local)",
-                                llm::LLMProvider::Mistral => "Mistral AI",
-                                llm::LLMProvider::Gemini => "Google Gemini",
-                                llm::LLMProvider::Copilot => "GitHub Copilot",
-                                llm::LLMProvider::CopilotCLI => "GitHub Copilot CLI",
-                                llm::LLMProvider::Office365AI => "Office 365 AI",
-                                llm::LLMProvider::GoogleOneAI => "Google One AI",
-                            }.to_string();
-                            *map.entry(name).or_insert(0) += 1;
-                            if let Ok(json) = serde_json::to_string(&map) { let _ = std::fs::write(path, json); }
-                        }
+                        // Track provider usage
+                        let provider_label = provider_enum_to_label(&res.provider).to_string();
+                        increment_usage(provider_label.clone());
+                        
                         msgs.write().push(Message {
                             author: "Kael".to_string(),
                             text: res.content,
                             is_streaming: false,
-                            provider: Some(match res.provider {
-                                llm::LLMProvider::Ollama => "Ollama (Local)".to_string(),
-                                llm::LLMProvider::Mistral => "Mistral AI".to_string(),
-                                llm::LLMProvider::Gemini => "Google Gemini".to_string(),
-                                llm::LLMProvider::Copilot => "GitHub Copilot".to_string(),
-                                llm::LLMProvider::CopilotCLI => "GitHub Copilot CLI".to_string(),
-                                llm::LLMProvider::Office365AI => "Office 365 AI".to_string(),
-                                llm::LLMProvider::GoogleOneAI => "Google One AI".to_string(),
-                            }),
+                            provider: Some(provider_label),
                             prompt: Some(prompt_for_save.clone()),
                         });
                         save_messages(&msgs.read());
+                        is_loading.set(false);  // Clear loading
                     }
                     Err(e) => {
                         msgs.write().push(Message {
@@ -619,6 +774,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                             ..Default::default()
                         });
                         save_messages(&msgs.read());
+                        is_loading.set(false);  // Clear loading
                     }
                 }
             });
@@ -745,6 +901,14 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                 div {
                                     // Kael bubble (AI or terminal output)
                                     style: "max-width: 720px; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; background: linear-gradient(150deg, #1c162b 0%, #120e1a 55%, #0f0c1a 100%); color: #f7f2ff; padding: 14px 16px; border-radius: 12px; border: 1px solid #3a2d56; box-shadow: 0 14px 34px #00000066, inset 4px 0 0 #ffcc00, inset 0 1px 0 #ffd166; font-size: 15px; line-height: 1.55;",
+                                    // Show provider icon ONLY if NOT a command (avoid showing twice)
+                                    if let Some(ref provider) = message.provider {
+                                        if !is_command(&message.text) {
+                                            div { class: "flex items-center gap-2 mb-2", style: "color: #ffcc00; font-size: 12px; font-weight: 600; letter-spacing: 0.06em;",
+                                                span { "{provider_to_icon(provider)}" }
+                                            }
+                                        }
+                                    }
                                     if is_command(&message.text) {
                                         div { class: "flex items-center gap-2 mb-2", style: "color: #7aebbe; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;",
                                             PanelIcon { class: "w-3 h-3" }
@@ -780,9 +944,12 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                                         }
                                                     }
                                             } else {
-                                                p { style: "margin: 0; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;", "{txt}", if message.is_streaming { " ⏳" } else { "" } }
-                                                if let Some(prov) = message.provider.as_ref() {
-                                                    div { style: "margin-top: 6px; color: #a99ec3; font-size: 12px;", "via {prov}" }
+                                                p { style: "margin: 0; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word;", 
+                                                    "{txt}", 
+                                                    if message.is_streaming { " ⏳" } else { "" },
+                                                    if let Some(prov) = message.provider.as_ref() {
+                                                        span { style: "margin-left: 8px; color: #a99ec3; font-size: 11px; opacity: 0.8;", "{provider_to_icon(prov)}" }
+                                                    }
                                                 }
                                             }
                                         }
@@ -793,15 +960,19 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                             if let Some(orig_prompt) = message.prompt.as_ref() {
                                                 if let Some((next_provider, rest)) = next_provider_after(cur_prov, &build_provider_order()) {
                                                     {
-                                                        let prompt_clone = orig_prompt.clone();
-                                                        let mut lp = props.last_provider.clone();
-                                                        let mut msgs = messages.clone();
-                                                        let auth_signal = props.auth_service.clone();
-                                                        let remaining = rest.to_vec();
-                                                        rsx! {
-                                                            button { style: "margin-top: 8px; padding: 6px 10px; border-radius: 6px; border: 1px solid #3a2d56; background: linear-gradient(135deg, #1f1631 0%, #181024 100%); color: #a99ec3; font-size: 12px;",
-                                                                onclick: move |_| {
-                                                                    let user_opt = auth_signal.read().get_user();
+                                                                        let prompt_clone = orig_prompt.clone();
+                                                                        let mut lp = props.last_provider.clone();
+                                                                        let mut msgs = messages.clone();
+                                                                        let auth_signal = props.auth_service.clone();
+                                                                        let remaining = rest.to_vec();
+                                                                        let mut is_loading_clone = is_loading.clone();
+                                                                        let mut loading_msg_clone = loading_message.clone();
+                                                                        rsx! {
+                                                                            button { style: "margin-top: 8px; padding: 6px 10px; border-radius: 6px; border: 1px solid #3a2d56; background: linear-gradient(135deg, #1f1631 0%, #181024 100%); color: #a99ec3; font-size: 12px;",
+                                                                                onclick: move |_| {
+                                                                                    is_loading_clone.set(true);
+                                                                                    loading_msg_clone.set(String::from("🔄 Trying next provider..."));
+                                                                                    let user_opt = auth_signal.read().get_user();
                                                                     let prompt_value = prompt_clone.clone();
                                                                     let req = llm::LLMRequest {
                                                                         provider: next_provider.clone(),
@@ -827,6 +998,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                                                                     prompt: Some(prompt_saved.clone()),
                                                                                 });
                                                                                 save_messages(&msgs.read());
+                                                                                is_loading_clone.set(false);
                                                                             }
                                                                             Err(e) => {
                                                                                 msgs.write().push(Message {
@@ -837,6 +1009,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                                                                     prompt: Some(prompt_saved.clone()),
                                                                                 });
                                                                                 save_messages(&msgs.read());
+                                                                                is_loading_clone.set(false);
                                                                             }
                                                                         }
                                                                     });
@@ -872,6 +1045,18 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                     }
                                 }
                             }
+                    }
+                }
+                // Loading indicator at bottom (after all messages)
+                if is_loading() {
+                    div { 
+                        class: "flex gap-3 mb-4 items-start",
+                        div { style: "width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #e040fb 0%, #ffcc00 100%); display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;",
+                            span { style: "font-weight: bold; color: #120e1a; font-size: 20px;", "K" }
+                        }
+                        div { style: "max-width: 720px; background: linear-gradient(150deg, #1c162b 0%, #120e1a 55%, #0f0c1a 100%); color: #a99ec3; padding: 14px 16px; border-radius: 12px; border: 1px solid #3a2d56; font-size: 15px;",
+                            span { style: "animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;", "{loading_message()}" }
+                        }
                     }
                 }
             }
@@ -927,9 +1112,18 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                     let p = pty();
                                     let cmd_display = cmd.clone();
                                     props.current_cmd.set(cmd_display);
+                                    let mut msgs = messages.clone();
                                     spawn(async move {
                                         if let Err(e) = p.write_line(&cmd).await {
-                                            eprintln!("PTY write error: {e}");
+                                            log::error!("PTY write error: {}", e);
+                                            // Show error to user
+                                            msgs.write().push(Message {
+                                                author: "Kael".to_string(),
+                                                text: format!("⚠️  Command execution failed: {}\n\n💡 The terminal may not be responding. Try restarting the app.", e),
+                                                is_streaming: false,
+                                                provider: None,
+                                                prompt: None,
+                                            });
                                         }
                                     });
                                 }
@@ -946,30 +1140,82 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                 let mut msgs = messages.clone();
                                 let prompt = input_text.clone();
                                 let auth_service = props.auth_service.clone();
+                                
+                                // Show loading indicator
+                                is_loading.set(true);
+                                loading_message.set(String::from("🤔 Thinking..."));
 
                                 spawn(async move {
                                     log::info!("🔍 Sending prompt to LLM: {}", prompt);
 
-                                    // Auto-select provider based on query type
-                                    let primary_provider = if is_system_query(&prompt) {
-                                        llm::LLMProvider::Ollama
+                                    // ===== INTELLIGENT ROUTER =====
+                                    // Check for escalation keywords/commands
+                                    let force_cloud = prompt.starts_with("!cloud ") 
+                                        || prompt.starts_with("!online ")
+                                        || prompt.to_lowercase().contains("escalate")
+                                        || prompt.to_lowercase().contains("use cloud")
+                                        || prompt.to_lowercase().contains("use online")
+                                        || prompt.to_lowercase().contains("try cloud")
+                                        || prompt.to_lowercase().contains("ask mistral")
+                                        || prompt.to_lowercase().contains("ask gemini");
+                                    
+                                    // Strip command prefix if present
+                                    let clean_prompt = if prompt.starts_with("!cloud ") {
+                                        prompt.strip_prefix("!cloud ").unwrap_or(&prompt).to_string()
+                                    } else if prompt.starts_with("!online ") {
+                                        prompt.strip_prefix("!online ").unwrap_or(&prompt).to_string()
                                     } else {
+                                        prompt.clone()
+                                    };
+
+                                    // Check GPU availability (for gaming)
+                                    let gpu_busy = is_gpu_busy();
+                                    
+                                    // Classify query type (Coding, Quick, Complex, System)
+                                    let query_type = classify_query(&clean_prompt);
+                                    
+                                    // Determine best local model
+                                    let best_model = get_best_local_model(&query_type, !gpu_busy);
+                                    
+                                    // Show user which model we're using
+                                    let status_msg = get_model_status_message(&query_type, best_model, gpu_busy);
+                                    log::info!("🤖 Query classified as: {:?}", query_type);
+                                    log::info!("📊 GPU Status: {}", if gpu_busy { "BUSY (gaming detected)" } else { "AVAILABLE" });
+                                    log::info!("🎯 Selected model: {}", best_model);
+
+                                    // Auto-select provider based on query type
+                                    let primary_provider = if force_cloud {
+                                        log::info!("⬆️  User requested cloud AI - escalating to Mistral");
+                                        msgs.write().push(Message {
+                                            author: "Kael".to_string(),
+                                            text: "⬆️  Escalating to cloud AI (Mistral) as requested...".to_string(),
+                                            is_streaming: false,
+                                            provider: None,
+                                            prompt: None,
+                                        });
+                                        llm::LLMProvider::Mistral
+                                    } else {
+                                        // Always use local for smart routing
                                         llm::LLMProvider::Ollama
                                     };
+                                    
+                                    // Log model selection (don't show as chat message)
+                                    log::info!("🤖 {}", status_msg);
+                                    
                                     log::info!("📍 Primary provider: {:?}", primary_provider);
 
                                     // Fallback chain of cloud providers (keys loaded lazily from Firebase)
-                                    // Note: CopilotCLI is deprecated as of Sept 2025
                                     let fallback_providers = vec![
                                         (llm::LLMProvider::Mistral, None),
                                         (llm::LLMProvider::Gemini, None),
                                         (llm::LLMProvider::Copilot, None),
+                                        (llm::LLMProvider::CopilotAgent, None),
                                     ];
 
                                     let req = llm::LLMRequest {
                                         provider: primary_provider,
                                         model: String::new(),
-                                        prompt: prompt.clone(),
+                                        prompt: clean_prompt.clone(),
                                         api_key: None,
                                         system: Some(llm::get_kael_system_prompt()),
                                     };
@@ -980,32 +1226,17 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                     match llm::send_request_with_fallback(req, user_opt.as_ref(), fallback_providers).await {
                                         Ok(res) => {
                                             log::info!("✅ Response provider: {:?}", res.provider);
-                                            // Update last provider badge
-                                            props.last_provider.set(match res.provider {
-                                                llm::LLMProvider::Ollama => "Ollama (Local)".to_string(),
-                                                llm::LLMProvider::Mistral => "Mistral AI".to_string(),
-                                                llm::LLMProvider::Gemini => "Google Gemini".to_string(),
-                                                llm::LLMProvider::Copilot => "GitHub Copilot".to_string(),
-                                                llm::LLMProvider::CopilotCLI => "GitHub Copilot CLI".to_string(),
-                                                llm::LLMProvider::Office365AI => "Office 365 AI".to_string(),
-                                                llm::LLMProvider::GoogleOneAI => "Google One AI".to_string(),
-                                            });
+                                            let provider_label = provider_enum_to_label(&res.provider).to_string();
+                                            props.last_provider.set(provider_label.clone());
                                             msgs.write().push(Message {
                                                 author: "Kael".to_string(),
                                                 text: res.content,
                                                 is_streaming: false,
-                                                provider: Some(match res.provider {
-                                                    llm::LLMProvider::Ollama => "Ollama (Local)".to_string(),
-                                                    llm::LLMProvider::Mistral => "Mistral AI".to_string(),
-                                                    llm::LLMProvider::Gemini => "Google Gemini".to_string(),
-                                                    llm::LLMProvider::Copilot => "GitHub Copilot".to_string(),
-                                                    llm::LLMProvider::CopilotCLI => "GitHub Copilot CLI".to_string(),
-                                                    llm::LLMProvider::Office365AI => "Office 365 AI".to_string(),
-                                                    llm::LLMProvider::GoogleOneAI => "Google One AI".to_string(),
-                                                }),
+                                                provider: Some(provider_label),
                                                 prompt: Some(prompt.clone()),
                                             });
                                             save_messages(&msgs.read());
+                                            is_loading.set(false);  // Clear loading
                                         }
                                         Err(e) => {
                                             log::error!("❌ All providers failed: {}", e);
@@ -1017,6 +1248,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                                 ..Default::default()
                                             });
                                             save_messages(&msgs.read());
+                                            is_loading.set(false);  // Clear loading
                                         }
                                     }
                                 });
@@ -1095,9 +1327,17 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                     let p = pty();
                                     let cmd_display = cmd.clone();
                                     props.current_cmd.set(cmd_display);
+                                    let mut msgs = messages.clone();
                                     spawn(async move {
                                         if let Err(e) = p.write_line(&cmd).await {
-                                            eprintln!("PTY write error: {e}");
+                                            log::error!("PTY write error: {}", e);
+                                            msgs.write().push(Message {
+                                                author: "Kael".to_string(),
+                                                text: format!("⚠️  Command failed: {}", e),
+                                                is_streaming: false,
+                                                provider: None,
+                                                prompt: None,
+                                            });
                                         }
                                     });
                                 }
@@ -1114,6 +1354,11 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                 let prompt = input_text.clone();
                                 let auth_service = props.auth_service.clone();
                                 let mut lp = props.last_provider.clone();
+                                
+                                // Show loading indicator
+                                is_loading.set(true);
+                                loading_message.set(String::from("🤔 Thinking..."));
+                                
                                 spawn(async move {
                                     // Auto-select provider based on query type
                                     let primary_provider = if is_system_query(&prompt) {
@@ -1127,7 +1372,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                         (llm::LLMProvider::Mistral, None),
                                         (llm::LLMProvider::Gemini, None),
                                         (llm::LLMProvider::Copilot, None),
-                                        (llm::LLMProvider::CopilotCLI, None),
+                                        (llm::LLMProvider::CopilotAgent, None),
                                     ];
 
                                     let req = llm::LLMRequest {
@@ -1141,31 +1386,17 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                     let user_opt = auth_service.read().get_user();
                                     match llm::send_request_with_fallback(req, user_opt.as_ref(), fallback_providers).await {
                                         Ok(res) => {
-                                            lp.set(match res.provider {
-                                                llm::LLMProvider::Ollama => "Ollama (Local)".to_string(),
-                                                llm::LLMProvider::Mistral => "Mistral AI".to_string(),
-                                                llm::LLMProvider::Gemini => "Google Gemini".to_string(),
-                                                llm::LLMProvider::Copilot => "GitHub Copilot".to_string(),
-                                                llm::LLMProvider::CopilotCLI => "GitHub Copilot CLI".to_string(),
-                                                llm::LLMProvider::Office365AI => "Office 365 AI".to_string(),
-                                                llm::LLMProvider::GoogleOneAI => "Google One AI".to_string(),
-                                            });
+                                            let provider_label = provider_enum_to_label(&res.provider).to_string();
+                                            lp.set(provider_label.clone());
                                             msgs.write().push(Message {
                                                 author: "Kael".to_string(),
                                                 text: res.content,
                                                 is_streaming: false,
-                                                provider: Some(match res.provider {
-                                                    llm::LLMProvider::Ollama => "Ollama (Local)".to_string(),
-                                                    llm::LLMProvider::Mistral => "Mistral AI".to_string(),
-                                                    llm::LLMProvider::Gemini => "Google Gemini".to_string(),
-                                                    llm::LLMProvider::Copilot => "GitHub Copilot".to_string(),
-                                                    llm::LLMProvider::CopilotCLI => "GitHub Copilot CLI".to_string(),
-                                                    llm::LLMProvider::Office365AI => "Office 365 AI".to_string(),
-                                                    llm::LLMProvider::GoogleOneAI => "Google One AI".to_string(),
-                                                }),
+                                                provider: Some(provider_label),
                                                 prompt: Some(prompt.clone()),
                                             });
                                             save_messages(&msgs.read());
+                                            is_loading.set(false);  // Clear loading
                                         }
                                         Err(e) => {
                                             msgs.write().push(Message {
@@ -1176,6 +1407,7 @@ pub fn ChatPanel(mut props: ChatProps) -> Element {
                                                 ..Default::default()
                                             });
                                             save_messages(&msgs.read());
+                                            is_loading.set(false);  // Clear loading
                                         }
                                     }
                                 });

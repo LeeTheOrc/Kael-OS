@@ -26,6 +26,7 @@ pub enum AIDecision {
 
 /// Kael-OS personality traits
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct KaelOSPersonality {
     pub name: String,
     pub traits: Vec<String>,
