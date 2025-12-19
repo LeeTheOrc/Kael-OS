@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Download - Kael-OS</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <nav class="navbar">
         <div class="container">
@@ -40,7 +42,7 @@
                 <div class="install-steps">
                     <h3 style="margin-bottom: 1rem;">Quick Install</h3>
                     <div class="code-block">
-                        <code>curl -sSL https://kael-os.dev/install.sh | bash</code>
+                        <code>curl -sSL https://kael.leroyonline.co.za/install.sh | bash</code>
                     </div>
 
                     <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Install from AUR</h3>
@@ -59,11 +61,15 @@ makepkg -si</code>
 
                     <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Direct Package Download</h3>
                     <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
-                        <a href="https://leroyonline.co.za/kael/downloads/desktop/kael-os-0.5.0-x86_64.tar.gz" class="btn btn-primary" download>
-                            Download .tar.gz (7.6 MB)
+                        <a href="https://kael.leroyonline.co.za/downloads/kael-os-linux.tar.gz" class="btn btn-primary"
+                            download>
+                            Download .tar.gz (latest)
                         </a>
                         <a href="pkgbuild/PKGBUILD" class="btn btn-secondary" download>
                             Download PKGBUILD
+                        </a>
+                        <a href="../AI_PROVIDER_RULES.md" class="btn btn-secondary" download>
+                            AI Provider Rules
                         </a>
                     </div>
                 </div>
@@ -108,8 +114,9 @@ kael-os</code>
                     </div>
 
                     <div style="margin-top: 1rem;">
-                        <a href="https://leroyonline.co.za/kael/downloads/desktop/kael-os-1.0.0-x86_64.tar.gz" class="btn btn-primary" download>
-                            Download Linux Binary (7.0 MB)
+                        <a href="https://kael.leroyonline.co.za/downloads/kael-os-linux.tar.gz" class="btn btn-primary"
+                            download>
+                            Download Linux Binary (latest)
                         </a>
                     </div>
                 </div>
@@ -135,7 +142,8 @@ chmod +x Kael-OS.AppImage
                     </div>
 
                     <div style="margin-top: 1rem;">
-                        <a href="https://github.com/leetheorc/Kael-OS-AI/releases/latest/download/Kael-OS.AppImage" class="btn btn-primary">
+                        <a href="https://github.com/leetheorc/Kael-OS-AI/releases/latest/download/Kael-OS.AppImage"
+                            class="btn btn-primary">
                             Download AppImage
                         </a>
                     </div>
@@ -152,8 +160,9 @@ chmod +x Kael-OS.AppImage
                 <div class="install-steps">
                     <h3 style="margin-bottom: 1rem;">Prerequisites</h3>
                     <ul style="color: var(--text-secondary); margin-bottom: 1rem;">
-                        <li>Rust 1.70+ (install via <code style="background: var(--bg-primary); padding: 0.2rem 0.5rem; border-radius: 0.25rem;">rustup</code>)</li>
-                        <li>Node.js 18+</li>
+                        <li>Rust 1.70+ (install via <code
+                                style="background: var(--bg-primary); padding: 0.2rem 0.5rem; border-radius: 0.25rem;">rustup</code>)
+                        </li>
                         <li>System dependencies (webkit2gtk, gtk3, etc.)</li>
                     </ul>
 
@@ -174,7 +183,7 @@ cargo run --release --manifest-path Kael-OS-AI/src-tauri/Cargo.toml</code>
 
                     <div style="margin-top: 1rem;">
                         <a href="https://github.com/leetheorc/Kael-OS-AI" class="btn btn-primary" target="_blank">
-                            View on GitHub
+                            View on GitHub (mirror)
                         </a>
                     </div>
                 </div>
@@ -183,8 +192,9 @@ cargo run --release --manifest-path Kael-OS-AI/src-tauri/Cargo.toml</code>
             <!-- System Requirements -->
             <div class="platform-section">
                 <h2>💻 System Requirements</h2>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem;">
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem;">
                     <div class="feature-card">
                         <h3>Minimum</h3>
                         <ul style="color: var(--text-secondary); list-style: none; margin-top: 1rem;">
@@ -254,13 +264,15 @@ cargo run --release --manifest-path Kael-OS-AI/src-tauri/Cargo.toml</code>
                     <ul>
                         <li><a href="https://github.com/leetheorc/Kael-OS-AI" target="_blank">GitHub</a></li>
                         <li><a href="https://discord.gg/9mRjPxpShW" target="_blank">Discord</a></li>
-                        <li><a href="https://github.com/leetheorc/Kael-OS-AI/discussions" target="_blank">Discussions</a></li>
+                        <li><a href="https://github.com/leetheorc/Kael-OS-AI/discussions"
+                                target="_blank">Discussions</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h4>Legal</h4>
                     <ul>
-                        <li><a href="https://github.com/leetheorc/Kael-OS-AI/blob/main/LICENSE" target="_blank">MIT License</a></li>
+                        <li><a href="https://github.com/leetheorc/Kael-OS-AI/blob/main/LICENSE" target="_blank">MIT
+                                License</a></li>
                         <li><a href="#privacy">Privacy Policy</a></li>
                     </ul>
                 </div>
@@ -273,4 +285,5 @@ cargo run --release --manifest-path Kael-OS-AI/src-tauri/Cargo.toml</code>
 
     <script src="script.js"></script>
 </body>
+
 </html>

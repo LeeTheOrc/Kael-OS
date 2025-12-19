@@ -1,15 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About - Kael-OS</title>
+    <link rel="icon" type="image/png" href="images/kael-icon-512.png">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <nav class="navbar">
         <div class="container">
-            <div class="nav-brand">Kael-OS</div>
+            <div class="nav-brand">
+                <img src="images/kael-icon-512.png" alt="Kael Dragon" style="height: 2rem; width: 2rem; margin-right: 0.5rem; vertical-align: middle; border-radius: 0.5rem;">
+                Kael-OS
+            </div>
             <ul class="nav-links">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="index.html#features">Features</a></li>
@@ -24,7 +30,7 @@
     <section class="about-hero">
         <div class="container">
             <h1>About Kael-OS</h1>
-            <p class="hero-subtitle">Local-first AI for the modern desktop</p>
+            <p class="hero-subtitle">Meet your dragon guardian companion for the AI quest</p>
         </div>
     </section>
 
@@ -32,14 +38,16 @@
         <section class="about-section">
             <h2>Our Mission</h2>
             <p>
-                Kael-OS is on a mission to bring powerful AI capabilities directly to your desktop without 
-                compromising on privacy, performance, or user control. We believe AI should work for you, 
-                not on distant servers controlled by corporations.
+                Kael-OS is more than just software - it's your partner on a grand quest. Meet Kael, a bird-like dragon
+                guardian who transforms every challenge into an epic boss battle. Together, you'll conquer tasks while
+                maintaining complete privacy and control over your AI experience.
             </p>
             <p>
-                By leveraging cutting-edge technologies like Rust, Tauri, and Ollama, we've built a 
-                lightning-fast desktop application that runs AI models locally on your machine. Your data 
-                stays private, your conversations remain confidential, and you maintain complete control.
+                By leveraging cutting-edge technologies like Rust, Tauri, and both local (Ollama) and cloud AI
+                providers,
+                we've built a lightning-fast desktop application that intelligently routes to the most efficient option.
+                Your data stays under your control, Kael's personality adapts to your style, and you maintain complete
+                sovereignty.
             </p>
         </section>
 
@@ -47,44 +55,46 @@
             <h2>Why Kael-OS?</h2>
             <div class="philosophy-grid">
                 <div class="philosophy-card">
+                    <h3>� Your Dragon Guardian</h3>
+                    <p>
+                        Kael isn't just an AI - they're your partner on this grand quest. Customize their sass and
+                        playfulness levels to match your adventure style. Every interaction frames challenges as epic
+                        boss battles.
+                    </p>
+                </div>
+                <div class="philosophy-card">
+                    <h3>⚡ Hybrid Intelligence</h3>
+                    <p>
+                        Local models (Ollama) for privacy, cloud providers (Gemini, Mistral) for power. Kael
+                        intelligently
+                        routes to the most efficient option, balancing speed, cost, and capability.
+                    </p>
+                </div>
+                <div class="philosophy-card">
                     <h3>🔒 Privacy First</h3>
                     <p>
-                        All AI processing happens locally on your machine. No data is sent to external servers, 
-                        ensuring your conversations and information remain completely private.
-                    </p>
-                </div>
-                <div class="philosophy-card">
-                    <h3>⚡ Built for Speed</h3>
-                    <p>
-                        Written in Rust with Tauri framework, Kael-OS delivers native performance with minimal 
-                        resource usage. Fast startup, low memory footprint, and instant responses.
-                    </p>
-                </div>
-                <div class="philosophy-card">
-                    <h3>📴 Offline-First</h3>
-                    <p>
-                        No internet connection required for core functionality. Work anywhere, anytime, 
-                        without depending on cloud services or network availability.
+                        Your data, your control. Local processing keeps conversations private. Cloud routing only when
+                        you choose, with your explicit API keys. Kael respects your sovereignty.
                     </p>
                 </div>
                 <div class="philosophy-card">
                     <h3>🎮 GPU Accelerated</h3>
                     <p>
-                        Automatic GPU detection and acceleration for faster AI inference. Supports NVIDIA 
+                        Automatic GPU detection and acceleration for faster AI inference. Supports NVIDIA
                         and AMD GPUs for maximum performance on compatible hardware.
                     </p>
                 </div>
                 <div class="philosophy-card">
                     <h3>🔓 Open Source</h3>
                     <p>
-                        Fully open source under MIT license. Transparent development, community-driven 
+                        Fully open source under MIT license. Transparent development, community-driven
                         improvements, and the freedom to modify and distribute.
                     </p>
                 </div>
                 <div class="philosophy-card">
                     <h3>🏔️ Arch-Native</h3>
                     <p>
-                        Optimized for Arch Linux with native packaging, rolling release updates, and deep 
+                        Optimized for Arch Linux with native packaging, rolling release updates, and deep
                         integration with the Arch ecosystem.
                     </p>
                 </div>
@@ -94,16 +104,23 @@
         <section class="about-section">
             <h2>Technology Stack</h2>
             <p>
-                Kael-OS is built with modern, high-performance technologies chosen for their speed, 
+                Kael-OS is built with modern, high-performance technologies chosen for their speed,
                 reliability, and developer experience:
             </p>
             <div class="install-steps" style="margin-top: 2rem;">
                 <ul style="color: var(--text-secondary);">
-                    <li><strong style="color: var(--text-primary);">Rust</strong> - Systems programming language for maximum performance and safety</li>
-                    <li><strong style="color: var(--text-primary);">Tauri</strong> - Modern desktop framework with native performance</li>
-                    <li><strong style="color: var(--text-primary);">Ollama</strong> - Local AI model runtime for privacy-focused AI inference</li>
-                    <li><strong style="color: var(--text-primary);">WebKit</strong> - Lightweight web rendering engine</li>
-                    <li><strong style="color: var(--text-primary);">TypeScript/React</strong> - Modern UI development with type safety</li>
+                    <li><strong style="color: var(--text-primary);">Rust</strong> - Systems programming language for
+                        maximum performance and safety</li>
+                    <li><strong style="color: var(--text-primary);">Tauri</strong> - Modern desktop framework with
+                        native performance</li>
+                    <li><strong style="color: var(--text-primary);">Embedded Director</strong> - Pure-Rust ML routing
+                        with 13KB MLP weights for instant query classification</li>
+                    <li><strong style="color: var(--text-primary);">Ollama</strong> - Local AI model runtime for
+                        privacy-focused inference</li>
+                    <li><strong style="color: var(--text-primary);">Cloud Providers</strong> - Optional Gemini and
+                        Mistral integration for heavy tasks</li>
+                    <li><strong style="color: var(--text-primary);">Dioxus</strong> - Reactive UI framework with
+                        hot-reload development</li>
                 </ul>
             </div>
         </section>
@@ -111,8 +128,8 @@
         <section class="about-section">
             <h2>Arch Linux Focus</h2>
             <p>
-                While Kael-OS runs on any modern Linux distribution, we have a special focus on Arch Linux. 
-                Arch's rolling release model, minimalist philosophy, and powerful package management align 
+                While Kael-OS runs on any modern Linux distribution, we have a special focus on Arch Linux.
+                Arch's rolling release model, minimalist philosophy, and powerful package management align
                 perfectly with our vision of a fast, customizable, local-first AI platform.
             </p>
             <p>
@@ -131,15 +148,17 @@
         <section class="about-section">
             <h2>Development Team</h2>
             <p>
-                Kael-OS is developed by leetheorc and a growing community of contributors who share a 
-                passion for privacy, performance, and open source software. We welcome contributions from 
+                Kael-OS is developed by leetheorc and a growing community of contributors who share a
+                passion for privacy, performance, and open source software. We welcome contributions from
                 developers of all skill levels.
             </p>
             <p>
-                Want to contribute? Check out our 
-                <a href="https://github.com/leetheorc/Kael-OS-AI" target="_blank" style="color: var(--accent-purple);">GitHub repository</a> 
-                and join the conversation on 
-                <a href="https://discord.gg/9mRjPxpShW" target="_blank" style="color: var(--accent-purple);">Discord</a>.
+                Want to contribute? Check out our
+                <a href="https://github.com/leetheorc/Kael-OS-AI" target="_blank"
+                    style="color: var(--accent-purple);">GitHub repository</a>
+                and join the conversation on
+                <a href="https://discord.gg/9mRjPxpShW" target="_blank"
+                    style="color: var(--accent-purple);">Discord</a>.
             </p>
         </section>
 
@@ -182,7 +201,7 @@
         <section class="about-section">
             <h2>Get Involved</h2>
             <p>
-                Kael-OS is a community-driven project. Whether you're a developer, designer, writer, or 
+                Kael-OS is a community-driven project. Whether you're a developer, designer, writer, or
                 just an enthusiastic user, there are many ways to contribute:
             </p>
             <div class="community-grid" style="margin-top: 2rem;">
@@ -207,8 +226,9 @@
         <section class="about-section">
             <h2>License</h2>
             <p>
-                Kael-OS is open source software released under the 
-                <a href="https://github.com/leetheorc/Kael-OS-AI/blob/main/LICENSE" target="_blank" style="color: var(--accent-purple);">MIT License</a>. 
+                Kael-OS is open source software released under the
+                <a href="https://github.com/leetheorc/Kael-OS-AI/blob/main/LICENSE" target="_blank"
+                    style="color: var(--accent-purple);">MIT License</a>.
                 You're free to use, modify, and distribute it as you see fit.
             </p>
         </section>
@@ -234,13 +254,15 @@
                     <ul>
                         <li><a href="https://github.com/leetheorc/Kael-OS-AI" target="_blank">GitHub</a></li>
                         <li><a href="https://discord.gg/9mRjPxpShW" target="_blank">Discord</a></li>
-                        <li><a href="https://github.com/leetheorc/Kael-OS-AI/discussions" target="_blank">Discussions</a></li>
+                        <li><a href="https://github.com/leetheorc/Kael-OS-AI/discussions"
+                                target="_blank">Discussions</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h4>Legal</h4>
                     <ul>
-                        <li><a href="https://github.com/leetheorc/Kael-OS-AI/blob/main/LICENSE" target="_blank">MIT License</a></li>
+                        <li><a href="https://github.com/leetheorc/Kael-OS-AI/blob/main/LICENSE" target="_blank">MIT
+                                License</a></li>
                         <li><a href="#privacy">Privacy Policy</a></li>
                     </ul>
                 </div>
@@ -253,4 +275,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>
